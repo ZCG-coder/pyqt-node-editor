@@ -1,4 +1,3 @@
-from PyQt5.QtCore import *
 from examples.example_calculator.calc_conf import *
 from examples.example_calculator.calc_node_base import *
 from nodeeditor.utils import dumpException
@@ -46,6 +45,7 @@ class CalcNode_Input(CalcNode):
         u_value = self.content.edit.text()
         s_value = int(u_value)
         self.value = s_value
+        self.calcText = str(self.value)
         self.markDirty(False)
         self.markInvalid(False)
 
@@ -56,4 +56,4 @@ class CalcNode_Input(CalcNode):
 
         self.evalChildren()
 
-        return self.value
+        return self.value, None

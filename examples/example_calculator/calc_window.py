@@ -7,13 +7,14 @@ from nodeeditor.utils import loadStylesheets
 from nodeeditor.node_editor_window import NodeEditorWindow
 from examples.example_calculator.calc_sub_window import CalculatorSubWindow
 from examples.example_calculator.calc_drag_listbox import QDMDragListbox
+from examples.example_calculator.calc_result_listbox import ResultListbox
 from nodeeditor.utils import dumpException, pp
 from examples.example_calculator.calc_conf import *
 
 # Enabling edge validators
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_edge_validators import *
-Edge.registerEdgeValidator(edge_validator_debug)
+# Edge.registerEdgeValidator(edge_validator_debug)
 Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)
 Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
 
@@ -26,6 +27,7 @@ DEBUG = False
 
 
 class CalculatorWindow(NodeEditorWindow):
+    NodeEditorWidget_class = CalculatorSubWindow
 
     def initUI(self):
         self.name_company = 'Blenderfreak'
@@ -53,11 +55,12 @@ class CalculatorWindow(NodeEditorWindow):
         self.mdiArea.setTabsMovable(True)
         self.setCentralWidget(self.mdiArea)
 
-        self.mdiArea.subWindowActivated.connect(self.updateMenus)
+        self.mdiArea.subWindowActivated.connect(self.windowActivated)
         self.windowMapper = QSignalMapper(self)
         self.windowMapper.mapped[QWidget].connect(self.setActiveSubWindow)
 
         self.createNodesDock()
+        self.createCalcResultDock()
 
         self.createActions()
         self.createMenus()
@@ -68,6 +71,17 @@ class CalculatorWindow(NodeEditorWindow):
         self.readSettings()
 
         self.setWindowTitle("Calculator NodeEditor Example")
+
+    def windowActivated(self):
+        # this function gets triggered when a window gets activated
+        self.updateMenus()
+
+        active = self.getCurrentNodeEditorWidget()
+        hasMdiChild = (active is not None)
+
+        if hasMdiChild:
+            active.onOutputChanged(None)
+
 
     def closeEvent(self, event):
         self.mdiArea.closeAllSubWindows()
@@ -109,7 +123,6 @@ class CalculatorWindow(NodeEditorWindow):
             subwnd.widget().fileNew()
             subwnd.show()
         except Exception as e: dumpException(e)
-
 
     def onFileOpen(self):
         fnames, filter = QFileDialog.getOpenFileNames(self, 'Open graph from file', self.getFileDialogDirectory(), self.getFileDialogFilter())
@@ -154,7 +167,7 @@ class CalculatorWindow(NodeEditorWindow):
         self.editMenu.aboutToShow.connect(self.updateEditMenu)
 
     def updateMenus(self):
-        # print("update Menus")
+        # this function gets triggered when a window gets activated
         active = self.getCurrentNodeEditorWidget()
         hasMdiChild = (active is not None)
 
@@ -186,8 +199,6 @@ class CalculatorWindow(NodeEditorWindow):
             self.actRedo.setEnabled(hasMdiChild and active.canRedo())
         except Exception as e: dumpException(e)
 
-
-
     def updateWindowMenu(self):
         self.windowMenu.clear()
 
@@ -195,6 +206,11 @@ class CalculatorWindow(NodeEditorWindow):
         toolbar_nodes.setCheckable(True)
         toolbar_nodes.triggered.connect(self.onWindowNodesToolbar)
         toolbar_nodes.setChecked(self.nodesDock.isVisible())
+
+        toolbar_result = self.windowMenu.addAction("Results Toolbar")
+        toolbar_result.setCheckable(True)
+        toolbar_result.triggered.connect(self.onWindowResultToolbar)
+        toolbar_result.setChecked(self.resultDock.isVisible())
 
         self.windowMenu.addSeparator()
 
@@ -230,6 +246,12 @@ class CalculatorWindow(NodeEditorWindow):
         else:
             self.nodesDock.show()
 
+    def onWindowResultToolbar(self):
+        if self.resultDock.isVisible():
+            self.resultDock.hide()
+        else:
+            self.resultDock.show()
+
     def createToolBars(self):
         pass
 
@@ -242,6 +264,15 @@ class CalculatorWindow(NodeEditorWindow):
 
         self.addDockWidget(Qt.RightDockWidgetArea, self.nodesDock)
 
+    def createCalcResultDock(self):
+        self.calcResultListbox = ResultListbox()
+
+        self.resultDock = QDockWidget("Results")
+        self.resultDock.setWidget(self.calcResultListbox)
+        self.resultDock.setFloating(False)
+
+        self.addDockWidget(Qt.RightDockWidgetArea, self.resultDock)
+
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
 
@@ -249,11 +280,17 @@ class CalculatorWindow(NodeEditorWindow):
         nodeeditor = child_widget if child_widget is not None else CalculatorSubWindow()
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
+        nodeeditor.addOutputChangedListener(self.onOutputChanged)
         # nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
         # nodeeditor.scene.addItemsDeselectedListener(self.updateEditMenu)
         nodeeditor.scene.history.addHistoryModifiedListener(self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
+        # nodeeditor.addEvaluatedEventListener(self.onEvaluated)
         return subwnd
+
+    def onOutputChanged(self, event, result):
+        # receives a list with results
+        self.calcResultListbox.addResult(result)
 
     def onSubWndClose(self, widget, event):
         existing = self.findMdiChild(widget.filename)
@@ -264,13 +301,11 @@ class CalculatorWindow(NodeEditorWindow):
         else:
             event.ignore()
 
-
     def findMdiChild(self, filename):
         for window in self.mdiArea.subWindowList():
             if window.widget().filename == filename:
                 return window
         return None
-
 
     def setActiveSubWindow(self, window):
         if window:

@@ -12,6 +12,8 @@ DEBUG_CONTEXT = False
 
 
 class CalculatorSubWindow(NodeEditorWidget):
+    Scene_class = CalcScene
+
     def __init__(self):
         super().__init__()
         # self.setAttribute(Qt.WA_DeleteOnClose)
@@ -26,11 +28,22 @@ class CalculatorSubWindow(NodeEditorWidget):
         self.scene.addDropListener(self.onDrop)
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
 
+        self.scene.addEvaluatedlistener(self.onOutputChanged)
+
         self._close_event_listeners = []
+        self._output_changed_event_listeners = []
 
     def getNodeClassFromData(self, data):
         if 'op_code' not in data: return Node
         return get_class_from_opcode(data['op_code'])
+
+    def onOutputChanged(self, output_node):
+        # This is triggered when the output node changes. Adding all output text to a list.
+        result = []
+        for node in self.scene.nodes:
+            if node.__class__.__name__ == "CalcNode_Output":
+                result.append(node.textOutput)
+        self.OutputChangedEvent(result)
 
     def doEvalOutputs(self):
         # eval all output nodes
@@ -67,6 +80,12 @@ class CalculatorSubWindow(NodeEditorWidget):
     def setTitle(self):
         self.setWindowTitle(self.getUserFriendlyFilename())
 
+    def addOutputChangedListener(self, callback):
+        self._output_changed_event_listeners.append(callback)
+
+    def OutputChangedEvent(self, output_node):
+        for callback in self._output_changed_event_listeners: callback(self, output_node)
+
     def addCloseEventListener(self, callback):
         self._close_event_listeners.append(callback)
 
@@ -98,6 +117,7 @@ class CalculatorSubWindow(NodeEditorWidget):
                 node = get_class_from_opcode(op_code)(self.scene)
                 node.setPos(scene_position.x(), scene_position.y())
                 self.scene.history.storeHistory("Created node %s" % node.__class__.__name__)
+
             except Exception as e: dumpException(e)
 
 

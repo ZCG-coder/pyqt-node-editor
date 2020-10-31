@@ -19,6 +19,9 @@ class QDMDragListbox(QListWidget):
 
         self.addMyItems()
 
+    def sizeHint(self):
+        # used for the initial size of the drag boxes
+        return QSize(150, 75)
 
     def addMyItems(self):
         keys = list(CALC_NODES.keys())

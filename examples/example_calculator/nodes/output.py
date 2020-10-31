@@ -1,12 +1,10 @@
-from PyQt5.QtCore import *
 from examples.example_calculator.calc_conf import *
 from examples.example_calculator.calc_node_base import *
-from nodeeditor.utils import dumpException
 
 
 class CalcOutputContent(QDMNodeContentWidget):
     def initUI(self):
-        self.lbl = QLabel("42", self)
+        self.lbl = QLabel("0", self)
         self.lbl.setAlignment(Qt.AlignLeft)
         self.lbl.setObjectName(self.node.content_label_objname)
 
@@ -22,26 +20,42 @@ class CalcNode_Output(CalcNode):
         super().__init__(scene, inputs=[1], outputs=[])
 
     def initInnerClasses(self):
+        super().initInnerClasses()
         self.content = CalcOutputContent(self)
         self.grNode = CalcGraphicsNode(self)
 
     def evalImplementation(self):
         input_node = self.getInput(0)
         if not input_node:
+
             self.grNode.setToolTip("Input is not connected")
             self.markInvalid()
-            return
+            self.content.lbl.setText("0")
+            self.textOutput = None
+            self.scene.OnOutputEvaluated(self)
+            return None, None
 
-        val = input_node.eval()
+        val, txt = input_node.eval()
+
+        if txt:
+            self.calcText = txt + " = " + str(round(val, 4)) if val else None
+        if not self.calcText == "":
+            self.textOutput = self.calcText
 
         if val is None:
             self.grNode.setToolTip("Input is NaN")
             self.markInvalid()
-            return
+            return None
 
-        self.content.lbl.setText("%d" % val)
+        self.content.lbl.setText(str(round(val, 4)))
         self.markInvalid(False)
         self.markDirty(False)
         self.grNode.setToolTip("")
 
-        return val
+        # sending out the output node after a change
+        self.scene.OnOutputEvaluated(self)
+        return val, txt
+
+
+
+

@@ -101,6 +101,14 @@ class Node(Serializable):
         :param y: Y `Scene` position
         """
         self.grNode.setPos(x, y)
+        for inputs in self.inputs:
+            for edge in inputs.edges:
+                edge.grEdge.calcPath()
+                edge.updatePositions()
+        for outputs in self.outputs:
+            for edge in outputs.edges:
+                edge.grEdge.calcPath()
+                edge.updatePositions()
 
 
     def initInnerClasses(self):

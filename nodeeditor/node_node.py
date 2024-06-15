@@ -8,7 +8,6 @@ from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_serializable import Serializable
 from nodeeditor.node_socket import Socket, LEFT_BOTTOM, LEFT_CENTER, LEFT_TOP, RIGHT_BOTTOM, RIGHT_CENTER, RIGHT_TOP
 from nodeeditor.utils_no_qt import dumpException, pp
-from widgets.ui.widget_variables import WidgetVariables
 
 DEBUG = False
 
@@ -82,7 +81,7 @@ class Node(Serializable):
     @title.setter
     def title(self, value):
         self._title = value
-        self.grNode.title = WidgetVariables.replaceVariables(self._title, self.scene.getCurrentVars())
+        self.grNode.title = self._title
 
     @property
     def pos(self):

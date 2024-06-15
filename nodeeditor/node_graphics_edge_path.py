@@ -6,6 +6,10 @@ from qtpy.QtGui import QPainterPath
 EDGE_CP_ROUNDNESS = 100     #: Bezier control point distance on the line
 WEIGHT_SOURCE = 0.2         #: factor for square edge to change the midpoint between start and end socket
 
+EDGE_IBCP_ROUNDNESS = 75     #: Scale EDGE_CURVATURE with distance of the edge endpoints
+NODE_DISTANCE = 12
+EDGE_CURVATURE = 2
+
 
 class GraphicsEdgePathBase:
     """Base Class for calculating the graphics path to draw for an graphics Edge"""
@@ -101,5 +105,83 @@ class GraphicsEdgePathSquare(GraphicsEdgePathBase):
         path.lineTo(mid_x, s[1])
         path.lineTo(mid_x, d[1])
         path.lineTo(d[0], d[1])
+
+        return path
+
+
+class GraphicsEdgePathImprovedSharp(GraphicsEdgePathBase):
+    """Better Cubic line connection Graphics Edge"""
+
+    def calcPath(self) -> QPainterPath:
+        """Calculate the Direct line connection
+
+        :returns: ``QPainterPath`` of the painting line
+        :rtype: ``QPainterPath``
+        """
+        sx, sy = self.owner.posSource
+        dx, dy = self.owner.posDestination
+        distx, disty = dx-sx, dy-sy
+        dist = math.sqrt(distx*distx + disty*disty)
+
+        # is start / end socket on left side?
+        sleft = self.owner.edge.start_socket.position <= 3
+        eleft = True
+        if self.owner.edge.end_socket is not None:
+            eleft = self.owner.edge.end_socket.position <= 3
+
+        node_sdist = (-NODE_DISTANCE) if sleft else NODE_DISTANCE
+        node_edist = (-NODE_DISTANCE) if eleft else NODE_DISTANCE
+
+        path = QPainterPath(QPointF(sx, sy))
+
+        if abs(dist) > NODE_DISTANCE:
+            path.lineTo(sx + node_sdist, sy)
+            path.lineTo(dx + node_edist, dy)
+
+        path.lineTo( dx, dy)
+
+        return path
+
+
+class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
+    """Better Cubic line connection Graphics Edge"""
+
+    def calcPath(self) -> QPainterPath:
+        """Calculate the Direct line connection
+
+        :returns: ``QPainterPath`` of the painting line
+        :rtype: ``QPainterPath``
+        """
+        sx, sy = self.owner.posSource
+        dx, dy = self.owner.posDestination
+        distx, disty = dx-sx, dy-sy
+        dist = math.sqrt(distx*distx + disty*disty)
+
+        # is start / end socket on left side?
+        sleft = self.owner.edge.start_socket.position <= 3
+        eleft = True
+        if self.owner.edge.end_socket is not None:
+            eleft = self.owner.edge.end_socket.position <= 3
+
+
+        path = QPainterPath(QPointF(sx, sy))
+
+        if abs(dist) > NODE_DISTANCE:
+            curvature = max(EDGE_CURVATURE, (EDGE_CURVATURE * abs(dist)) / EDGE_IBCP_ROUNDNESS)
+
+            node_sdist = (-NODE_DISTANCE) if sleft else NODE_DISTANCE
+            node_edist = (-NODE_DISTANCE) if eleft else NODE_DISTANCE
+
+            path.lineTo(sx + node_sdist, sy)
+
+            path.cubicTo(
+                QPointF(sx + node_sdist * curvature, sy),
+                QPointF(dx + node_edist * curvature, dy),
+                QPointF(dx + node_edist, dy)
+            )
+
+            path.lineTo(dx + node_edist, dy)
+
+        path.lineTo( dx, dy)
 
         return path

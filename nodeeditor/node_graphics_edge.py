@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QGraphicsPathItem, QWidget, QGraphicsItem
 from qtpy.QtGui import QColor, QPen, QPainterPath
 from qtpy.QtCore import Qt, QRectF, QPointF
 
-from nodeeditor.node_graphics_edge_path import GraphicsEdgePathBezier, GraphicsEdgePathDirect, GraphicsEdgePathSquare
+from nodeeditor.node_graphics_edge_path import GraphicsEdgePathBezier, GraphicsEdgePathDirect, GraphicsEdgePathSquare, GraphicsEdgePathImprovedSharp, GraphicsEdgePathImprovedBezier
 
 
 class QDMGraphicsEdge(QGraphicsPathItem):
@@ -70,15 +70,20 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
     def determineEdgePathClass(self):
         """Decide which GraphicsEdgePath class should be used to calculate path according to edge.edge_type value"""
-        from nodeeditor.node_edge import EDGE_TYPE_BEZIER, EDGE_TYPE_DIRECT, EDGE_TYPE_SQUARE
+        from nodeeditor.node_edge import EDGE_TYPE_BEZIER, EDGE_TYPE_DIRECT, EDGE_TYPE_SQUARE, EDGE_TYPE_IMPROVED_SHARP, EDGE_TYPE_IMPROVED_BEZIER
         if self.edge.edge_type == EDGE_TYPE_BEZIER:
             return GraphicsEdgePathBezier
         if self.edge.edge_type == EDGE_TYPE_DIRECT:
             return GraphicsEdgePathDirect
         if self.edge.edge_type == EDGE_TYPE_SQUARE:
             return GraphicsEdgePathSquare
+        if self.edge.edge_type == EDGE_TYPE_IMPROVED_SHARP:
+            return GraphicsEdgePathImprovedSharp
+        if self.edge.edge_type == EDGE_TYPE_IMPROVED_BEZIER:
+            return GraphicsEdgePathImprovedBezier
+
         else:
-            return GraphicsEdgePathBezier
+            return GraphicsEdgePathImprovedBezier
 
     def makeUnselectable(self):
         """Used for drag edge to disable click detection over this graphics item"""

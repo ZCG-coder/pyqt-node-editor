@@ -11,7 +11,9 @@ from nodeeditor.utils_no_qt import dumpException
 EDGE_TYPE_DIRECT = 1        #:
 EDGE_TYPE_BEZIER = 2        #:
 EDGE_TYPE_SQUARE = 3        #:
-EDGE_TYPE_DEFAULT = EDGE_TYPE_BEZIER
+EDGE_TYPE_IMPROVED_SHARP  = 4       #:
+EDGE_TYPE_IMPROVED_BEZIER = 5       #:
+EDGE_TYPE_DEFAULT = EDGE_TYPE_IMPROVED_BEZIER
 
 DEBUG = False
 

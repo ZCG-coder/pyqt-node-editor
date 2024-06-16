@@ -362,8 +362,14 @@ class Scene(Serializable):
 
     def serialize(self) -> OrderedDict:
         nodes, edges = [], []
-        for node in self.nodes: nodes.append(node.serialize())
-        for edge in self.edges: edges.append(edge.serialize())
+        for node in self.nodes:
+            newnode = node.serialize()
+            if not any (newnode['id'] == a['id'] for a in nodes):
+                nodes.append(newnode)
+        for edge in self.edges:
+            newedge = edge.serialize()
+            if not any (newedge['id'] == a['id'] for a in edges):
+                edges.append(newedge)
         return OrderedDict([
             ('id', self.id),
             ('scene_width', self.scene_width),

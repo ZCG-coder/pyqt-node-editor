@@ -106,7 +106,11 @@ class SceneClipboard():
         # calculate selected objects bbox and center
         minx, maxx, miny, maxy = 10000000,-10000000, 10000000,-10000000
         for node_data in data['nodes']:
-            x, y = node_data['pos_x'], node_data['pos_y']
+            if 'pos_x' in node_data and 'pos_y' in node_data:
+                x, y = node_data['pos_x'], node_data['pos_y']
+            else:
+                # added support if node pos serializes into `pos` instead of `pos_x` and `pos_y`
+                x, y = node_data['pos']
             if x < minx: minx = x
             if x > maxx: maxx = x
             if y < miny: miny = y

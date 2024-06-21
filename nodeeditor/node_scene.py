@@ -21,6 +21,9 @@ class InvalidFile(Exception): pass
 
 class Scene(Serializable):
     """Class representing NodeEditor's `Scene`"""
+    historyClass = SceneHistory
+    clipboardClass = SceneClipboard
+
     def __init__(self):
         """
         :Instance Attributes:
@@ -57,8 +60,8 @@ class Scene(Serializable):
         self.node_class_selector = None
 
         self.initUI()
-        self.history = SceneHistory(self)
-        self.clipboard = SceneClipboard(self)
+        self.history = self.historyClass(self)
+        self.clipboard = self.clipboardClass(self)
 
         self.grScene.itemSelected.connect(self.onItemSelected)
         self.grScene.itemsDeselected.connect(self.onItemsDeselected)

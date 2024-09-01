@@ -125,7 +125,10 @@ class GraphicsEdgePathImprovedSharp(GraphicsEdgePathBase):
 
         # is start / end socket on left side?
         sleft = self.owner.edge.start_socket.position <= 3
-        eleft = True
+
+        # if the drag edge started from input socket, we should connect to output socket...
+        eleft = self.owner.edge.start_socket.position > 3
+
         if self.owner.edge.end_socket is not None:
             eleft = self.owner.edge.end_socket.position <= 3
 
@@ -159,7 +162,10 @@ class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
 
         # is start / end socket on left side?
         sleft = self.owner.edge.start_socket.position <= 3
-        eleft = True
+
+        # if the drag edge started from input socket, we should connect to output socket...
+        eleft = self.owner.edge.start_socket.position > 3
+
         if self.owner.edge.end_socket is not None:
             eleft = self.owner.edge.end_socket.position <= 3
 

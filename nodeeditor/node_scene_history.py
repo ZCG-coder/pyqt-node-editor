@@ -65,6 +65,22 @@ class SceneHistory():
         """
         self._history_restored_listeners.append(callback)
 
+    def removeHistoryStoredListener(self, callback: 'function'):
+        """
+        Remove registered callback for `HistoryStored` event
+
+        :param callback: callback function
+        """
+        if callback in self._history_stored_listeners: self._history_stored_listeners.remove(callback)
+
+    def removeHistoryRestoredListener(self, callback: 'function'):
+        """
+        Remove registered callback for `HistoryRestored` event
+
+        :param callback: callback function
+        """
+        if callback in self._history_restored_listeners: self._history_restored_listeners.remove(callback)
+
     def canUndo(self) -> bool:
         """Return ``True`` if Undo is available for current `History Stack`
 

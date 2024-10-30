@@ -2,7 +2,7 @@
 
 __name__ = 'NodeEditor'
 __author__ = 'Pavel Křupala'
-__version__ = '0.9.14'
+__version__ = '0.9.15'
 
 
 _QT_API_NAME, _QT_API_VERSION = None, None
@@ -35,6 +35,6 @@ if _QT_API_NAME is None:
     except ImportError:
         pass
 
-if _QT_API_NAME is None:
-    raise ImportError("Please install PyQt5/PySide2 or PyQt6/PySide6")
-
+# don't be too strict yet...
+# if _QT_API_NAME is None:
+#     raise ImportError("Please install PyQt5/PySide2 or PyQt6/PySide6")

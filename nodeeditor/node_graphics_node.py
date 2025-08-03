@@ -269,7 +269,7 @@ class QDMGraphicsNode(QGraphicsItem):  # type: ignore
             self.edge_roundness,
         )
         painter.setBrush(Qt.NoBrush)
-        if self.hovered:
+        if self.hovered and not self.isSelected():
             painter.setPen(self._pen_hovered)
             painter.drawPath(path_outline.simplified())
             painter.setPen(self._pen_default)

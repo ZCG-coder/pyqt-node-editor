@@ -111,7 +111,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         self.zoomClamp = True
         self.zoom = 0
         self.zoomStep = 1
-        self.zoomRange = [0, 10]
+        self.zoomRange = [1, 10]
         self.scale(1, 1)
 
         # listeners
@@ -134,7 +134,17 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
     def handlePinchGesture(self, gesture):
         if gesture.state() == Qt.GestureUpdated:
             scale_factor = gesture.scaleFactor()
-            self.scale(scale_factor, scale_factor)
+            # Compute the new zoom level by multiplying the current zoom by the scale factor
+            new_zoom = self.zoomInFactor * scale_factor
+            # Clamp the zoom to the specified range
+            min_zoom, max_zoom = self.zoomRange
+            clamped_zoom = max(min_zoom, min(new_zoom, max_zoom))
+            # Determine the actual scale to apply relative to the current zoom
+            scale_to_apply = (
+                clamped_zoom / self.zoomInFactor if self.zoomInFactor != 0 else 1.0
+            )
+            self.zoomInFactor = clamped_zoom
+            self.scale(scale_to_apply, scale_to_apply)
 
     def initUI(self):
         """Set up this ``QGraphicsView``"""

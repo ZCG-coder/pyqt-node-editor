@@ -1,3 +1,10 @@
+from typing import TYPE_CHECKING
+
+from nodeeditor.node_color import SocketTypes
+
+if TYPE_CHECKING:
+    from nodeeditor.node_node import Node
+    from nodeeditor.node_edge import Edge
 # -*- coding: utf-8 -*-
 """
 A module containing NodeEditor's class for representing Socket and Socket Position Constants.
@@ -17,7 +24,7 @@ class SocketPosition(IntEnum):
 
 
 class Socket(Serializable):
-    Socket_GR_Class = QDMGraphicsSocket
+    Socket_GR_Class = QDMGraphicsSocket  # type: ignore
 
     """Class representing Socket."""
 
@@ -63,14 +70,14 @@ class Socket(Serializable):
         self.node = node
         self.position = position
         self.index = index
-        self.socket_type = socket_params.get("socket_type", 0)
+        self.socket_type = socket_params.get("socket_type", SocketTypes.STR)
         self.count_on_this_node_side = count_on_this_node_side
         self.is_multi_edges = multi_edges
         self.is_input = is_input
         self.is_output = not self.is_input
         self.name = socket_params.get("name", "S")
 
-        self.grSocket = self.__class__.Socket_GR_Class(self)
+        self.grSocket = self.__class__.Socket_GR_Class(self)  # type: ignore
 
         self.setSocketPosition()
 
@@ -86,8 +93,8 @@ class Socket(Serializable):
 
     def delete(self):
         """Delete this `Socket` from graphics scene for sure"""
-        self.grSocket.setParentItem(None)
-        self.node.scene.grScene.removeItem(self.grSocket)
+        self.grSocket.setParentItem(None)  # type: ignore
+        self.node.scene.grScene.removeItem(self.grSocket)  # type: ignore
         del self.grSocket
 
     def changeSocketType(self, new_socket_type: int) -> bool:
@@ -101,7 +108,7 @@ class Socket(Serializable):
         """
         if self.socket_type != new_socket_type:
             self.socket_type = new_socket_type
-            self.grSocket.changeSocketType()
+            self.grSocket.changeSocketType()  # type: ignore
             return True
         return False
 
@@ -112,7 +119,7 @@ class Socket(Serializable):
             *self.node.getSocketPosition(
                 self.index, self.position, self.count_on_this_node_side
             )
-        )
+        )  # type: ignore
 
     def getSocketPosition(self):
         """

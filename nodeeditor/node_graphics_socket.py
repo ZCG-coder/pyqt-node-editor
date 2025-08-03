@@ -2,32 +2,15 @@
 """
 A module containing Graphics representation of a :class:`~nodeeditor.node_socket.Socket`
 """
-from qtpy.QtWidgets import QGraphicsItem, QApplication
-from qtpy.QtGui import QColor, QBrush, QPen, QFontMetrics
-from qtpy.QtCore import Qt, QRectF, QPoint, QPointF
-
-SOCKET_COLORS = [
-    QColor("#FFFF7700"),
-    QColor("#FF52e220"),
-    QColor("#FF0056a6"),
-    QColor("#FFa86db1"),
-    QColor("#FFb54747"),
-    QColor("#FFdbe220"),
-    QColor("#FF888888"),
-    QColor("#FFFF7700"),
-    QColor("#FF52e220"),
-    QColor("#FF0056a6"),
-    QColor("#FFa86db1"),
-    QColor("#FFb54747"),
-    QColor("#FFdbe220"),
-    QColor("#FF888888"),
-]
+from qtpy.QtWidgets import QGraphicsItem, QApplication  # type: ignore
+from qtpy.QtGui import QColor, QBrush, QPen, QFontMetrics  # type: ignore
+from qtpy.QtCore import Qt, QRectF, QPoint, QPointF  # type: ignore
 
 
 class QDMGraphicsSocket(QGraphicsItem):
     """Class representing Graphic `Socket` in ``QGraphicsScene``"""
 
-    def __init__(self, socket: "Socket"):
+    def __init__(self, socket: "Socket") -> None:  # type: ignore
         """
         :param socket: reference to :class:`~nodeeditor.node_socket.Socket`
         :type socket: :class:`~nodeeditor.node_socket.Socket`
@@ -43,21 +26,21 @@ class QDMGraphicsSocket(QGraphicsItem):
         self.initAssets()
 
     @property
-    def socket_type(self):
+    def socket_type(self) -> int:  # type: ignore
         return self.socket.socket_type
 
-    def getSocketColor(self, key):
+    def getSocketColor(self, key) -> QColor:  # type: ignore
         """Returns the ``QColor`` for this ``key``"""
-        return SOCKET_COLORS[key]
+        return QColor(key)
 
-    def changeSocketType(self):
+    def changeSocketType(self) -> None:  # type: ignore
         """Change the Socket Type"""
         self._color_background = self.getSocketColor(self.socket_type)
         self._brush = QBrush(self._color_background)
         # print("Socket changed to:", self._color_background.getRgbF())
         self.update()
 
-    def initAssets(self):
+    def initAssets(self) -> None:  # type: ignore
         """Initialize ``QObjects`` like ``QColor``, ``QPen`` and ``QBrush``"""
 
         # determine socket color

@@ -2,7 +2,7 @@
 """
 A module containing `Graphics View` for NodeEditor
 """
-from typing import Optional
+from typing import Optional, Callable, Any
 from enum import IntEnum
 from qtpy.QtCore import QEvent, QPoint, QPointF, QRectF, Qt, Signal  # type: ignore
 from qtpy.QtGui import (
@@ -119,19 +119,19 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         self._drop_listeners = []
         self.grabGesture(Qt.PinchGesture)
 
-    def event(self, event):
+    def event(self, event):  # type: ignore
         if event.type() == QEvent.Gesture:
             return self.gestureEvent(event)
         return super().event(event)
 
-    def gestureEvent(self, event):
+    def gestureEvent(self, event):  # type: ignore
         pinch = event.gesture(Qt.PinchGesture)
         if pinch:
             self.handlePinchGesture(pinch)
             return True
         return False
 
-    def handlePinchGesture(self, gesture):
+    def handlePinchGesture(self, gesture):  # type: ignore
         if gesture.state() == Qt.GestureUpdated:
             scale_factor = gesture.scaleFactor()
             # Compute the new zoom level by multiplying the current zoom by the scale factor
@@ -146,7 +146,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
             self.zoomInFactor = clamped_zoom
             self.scale(scale_to_apply, scale_to_apply)
 
-    def initUI(self):
+    def initUI(self) -> None:  # type: ignore
         """Set up this ``QGraphicsView``"""
         # self.setRenderHints(QPainter.Antialiasing | QPainter.HighQualityAntialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform)
         self.setRenderHints(
@@ -166,7 +166,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         # enable dropping
         self.setAcceptDrops(True)
 
-    def isSnappingEnabled(self, event: "QInputEvent" = None) -> bool:
+    def isSnappingEnabled(self, event: Optional[QInputEvent] = None) -> bool:  # type: ignore
         """Returns ``True`` if snapping is currently enabled"""
         if not EDGE_SNAPPING:
             return False
@@ -179,21 +179,21 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
 
         return False
 
-    def resetMode(self):
+    def resetMode(self) -> None:  # type: ignore
         """Helper function to re-set the grView's State Machine state to the default"""
         self.mode = NodeEditorMode.NOOP
 
-    def dragEnterEvent(self, event: QDragEnterEvent):
+    def dragEnterEvent(self, event: Optional[QDragEnterEvent]) -> None:  # type: ignore
         """Trigger our registered `Drag Enter` events"""
         for callback in self._drag_enter_listeners:
             callback(event)
 
-    def dropEvent(self, event: QDropEvent):
+    def dropEvent(self, event: Optional[QDropEvent]) -> None:  # type: ignore
         """Trigger our registered `Drop` events"""
         for callback in self._drop_listeners:
             callback(event)
 
-    def addDragEnterListener(self, callback: "function"):
+    def addDragEnterListener(self, callback: Callable[[QDragEnterEvent], Any]) -> None:  # type: ignore
         """
         Register callback for `Drag Enter` event
 
@@ -201,7 +201,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         """
         self._drag_enter_listeners.append(callback)
 
-    def addDropListener(self, callback: "function"):
+    def addDropListener(self, callback: Callable[[QDropEvent], Any]) -> None:  # type: ignore
         """
         Register callback for `Drop` event
 
@@ -209,7 +209,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         """
         self._drop_listeners.append(callback)
 
-    def mousePressEvent(self, event: QMouseEvent):
+    def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore
         """Dispatch Qt's mousePress event to corresponding function below"""
         if event.button() == Qt.MiddleButton:
             self.middleMouseButtonPress(event)
@@ -220,7 +220,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         else:
             super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event: QMouseEvent):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore
         """Dispatch Qt's mouseRelease event to corresponding function below"""
         if event.button() == Qt.MiddleButton:
             self.middleMouseButtonRelease(event)
@@ -231,7 +231,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         else:
             super().mouseReleaseEvent(event)
 
-    def middleMouseButtonPress(self, event: QMouseEvent):
+    def middleMouseButtonPress(self, event: QMouseEvent) -> None:  # type: ignore
         """When Middle mouse button was pressed"""
 
         item = self.getItemAtClick(event)
@@ -275,7 +275,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
             )
         super().mousePressEvent(fakeEvent)
 
-    def middleMouseButtonRelease(self, event: QMouseEvent):
+    def middleMouseButtonRelease(self, event: QMouseEvent) -> None:  # type: ignore
         """When Middle mouse button was released"""
         if QT_API in ("pyqt5", "pyside2"):
             fakeEvent = QMouseEvent(
@@ -297,7 +297,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         super().mouseReleaseEvent(fakeEvent)
         self.setDragMode(QGraphicsView.RubberBandDrag)
 
-    def leftMouseButtonPress(self, event: QMouseEvent):
+    def leftMouseButtonPress(self, event: QMouseEvent) -> None:  # type: ignore
         """When Left  mouse button was pressed"""
 
         # get the item we clicked on
@@ -385,7 +385,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
 
         super().mousePressEvent(event)
 
-    def leftMouseButtonRelease(self, event: QMouseEvent):
+    def leftMouseButtonRelease(self, event: QMouseEvent) -> None:  # type: ignore
         """When Left  mouse button was released"""
 
         # get the item on which we release the mouse button on
@@ -487,11 +487,11 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
 
         super().mouseReleaseEvent(event)
 
-    def rightMouseButtonPress(self, event: QMouseEvent):
+    def rightMouseButtonPress(self, event: QMouseEvent) -> None:  # type: ignore
         """When Right mouse button was pressed"""
         super().mousePressEvent(event)
 
-    def rightMouseButtonRelease(self, event: QMouseEvent):
+    def rightMouseButtonRelease(self, event: QMouseEvent) -> None:  # type: ignore
         """When Right mouse button was release"""
 
         ## cannot be because with dragging RMB we spawn Create New Node Context Menu
@@ -502,7 +502,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
 
         super().mouseReleaseEvent(event)
 
-    def mouseMoveEvent(self, event: QMouseEvent):
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore
         """Overriden Qt's ``mouseMoveEvent`` handling Scene/View logic"""
         scenepos = self.mapToScene(event.pos())
 
@@ -537,7 +537,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
 
         super().mouseMoveEvent(event)
 
-    def keyPressEvent(self, event: QKeyEvent):
+    def keyPressEvent(self, event: QKeyEvent) -> None:  # type: ignore
         """
         .. note::
             This overridden Qt's method was used for handling key shortcuts, before we implemented proper
@@ -576,7 +576,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         # else:
         super().keyPressEvent(event)
 
-    def cutIntersectingEdges(self):
+    def cutIntersectingEdges(self) -> None:  # type: ignore
         """Compare which `Edges` intersect with current `Cut line` and delete them safely"""
         for ix in range(len(self.cutline.line_points) - 1):
             p1 = self.cutline.line_points[ix]
@@ -592,7 +592,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
 
     def setSocketHighlights(
         self, scenepos: QPointF, highlighted: bool = True, radius: float = 50
-    ):
+    ) -> list:  # type: ignore
         """Set/disable socket highlights in Scene area defined by `scenepos` and `radius`"""
         scanrect = QRectF(
             scenepos.x() - radius, scenepos.y() - radius, radius * 2, radius * 2
@@ -603,7 +603,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
             grSocket.isHighlighted = highlighted
         return items
 
-    def deleteSelected(self):
+    def deleteSelected(self) -> None:  # type: ignore
         """Shortcut for safe deleting every object selected in the `Scene`."""
         for item in self.grScene.selectedItems():
             if isinstance(item, QDMGraphicsEdge):
@@ -612,7 +612,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
                 item.node.remove()
         self.grScene.scene.history.storeHistory("Delete selected", setModified=True)
 
-    def debug_modifiers(self, event):
+    def debug_modifiers(self, event: QInputEvent) -> str:  # type: ignore
         """Helper function get string if we hold Ctrl, Shift or Alt modifier keys"""
         out = "MODS: "
         if isSHIFTPressed(event):
@@ -623,7 +623,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
             out += "ALT "
         return out
 
-    def getItemAtClick(self, event: QEvent) -> "QGraphicsItem":
+    def getItemAtClick(self, event: QEvent) -> Any:  # type: ignore
         """Return the object on which we've clicked/release mouse button
 
         :param event: Qt's mouse or key event
@@ -634,7 +634,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
         obj = self.itemAt(pos)
         return obj
 
-    def distanceBetweenClickAndReleaseIsOff(self, event: QMouseEvent) -> bool:
+    def distanceBetweenClickAndReleaseIsOff(self, event: QMouseEvent) -> bool:  # type: ignore
         """Measures if we are too far from the last Mouse button click scene position.
         This is used for detection if we release too far after we clicked on a `Socket`
 
@@ -649,7 +649,7 @@ class QDMGraphicsView(QGraphicsView):  # type: ignore
             dist_scene.x() * dist_scene.x() + dist_scene.y() * dist_scene.y()
         ) > edge_drag_threshold_sq
 
-    def wheelEvent(self, event: QWheelEvent):
+    def wheelEvent(self, event: QWheelEvent) -> None:  # type: ignore
         """overridden Qt's ``wheelEvent``. This handles zooming"""
         if event.pixelDelta() != QPoint(0, 0):
             return super().wheelEvent(event)

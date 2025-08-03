@@ -8,7 +8,7 @@ from nodeeditor.utils import dumpException
 class SceneHistory:
     """Class contains all the code for undo/redo operations"""
 
-    def __init__(self, scene: "Scene"):
+    def __init__(self, scene: "Scene") -> None:  # type: ignore
         """
         :param scene: Reference to the :class:`~nodeeditor.node_scene.Scene`
         :type scene: :class:`~nodeeditor.node_scene.Scene`
@@ -30,16 +30,16 @@ class SceneHistory:
         self._history_stored_listeners = []
         self._history_restored_listeners = []
 
-    def clear(self):
+    def clear(self) -> None:  # type: ignore
         """Reset the history stack"""
         self.history_stack = []
         self.history_current_step = -1
 
-    def storeInitialHistoryStamp(self):
+    def storeInitialHistoryStamp(self) -> None:  # type: ignore
         """Helper function usually used when new or open file requested"""
         self.storeHistory("Initial History Stamp")
 
-    def addHistoryModifiedListener(self, callback: "function"):
+    def addHistoryModifiedListener(self, callback: "function") -> None:  # type: ignore
         """
         Register callback for `HistoryModified` event
 
@@ -47,7 +47,7 @@ class SceneHistory:
         """
         self._history_modified_listeners.append(callback)
 
-    def addHistoryStoredListener(self, callback: "function"):
+    def addHistoryStoredListener(self, callback: "function") -> None:  # type: ignore
         """
         Register callback for `HistoryStored` event
 
@@ -55,7 +55,7 @@ class SceneHistory:
         """
         self._history_stored_listeners.append(callback)
 
-    def addHistoryRestoredListener(self, callback: "function"):
+    def addHistoryRestoredListener(self, callback: "function") -> None:  # type: ignore
         """
         Register callback for `HistoryRestored` event
 

@@ -3,17 +3,21 @@
 A module containing NodeEditor's class for representing Edge and Edge Type Constants.
 """
 from collections import OrderedDict
+from enum import IntEnum
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
 from nodeeditor.node_serializable import Serializable
 from nodeeditor.utils_no_qt import dumpException
 
 
-EDGE_TYPE_DIRECT = 1  #:
-EDGE_TYPE_BEZIER = 2  #:
-EDGE_TYPE_SQUARE = 3  #:
-EDGE_TYPE_IMPROVED_SHARP = 4  #:
-EDGE_TYPE_IMPROVED_BEZIER = 5  #:
-EDGE_TYPE_DEFAULT = EDGE_TYPE_IMPROVED_BEZIER
+class EdgeType(IntEnum):
+    DIRECT = 1
+    BEZIER = 2
+    SQUARE = 3
+    IMPROVED_SHARP = 4
+    IMPROVED_BEZIER = 5
+
+
+EDGE_TYPE_DEFAULT = EdgeType.IMPROVED_BEZIER
 
 
 class Edge(Serializable):
@@ -30,7 +34,7 @@ class Edge(Serializable):
         scene: "Scene",
         start_socket: "Socket" = None,
         end_socket: "Socket" = None,
-        edge_type=EDGE_TYPE_DIRECT,
+        edge_type: "EdgeType" = EdgeType.DIRECT,
     ):
         """
 
@@ -56,6 +60,8 @@ class Edge(Serializable):
 
         self.start_socket = start_socket
         self.end_socket = end_socket
+        if not isinstance(edge_type, EdgeType):
+            edge_type = EdgeType(edge_type)
         self._edge_type = edge_type
 
         # create Graphics Edge instance
@@ -118,7 +124,7 @@ class Edge(Serializable):
             self.end_socket.addEdge(self)
 
     @property
-    def edge_type(self):
+    def edge_type(self) -> EdgeType:
         """
         Edge type
 
@@ -131,7 +137,8 @@ class Edge(Serializable):
 
     @edge_type.setter
     def edge_type(self, value):
-        # assign new value
+        if not isinstance(value, EdgeType):
+            value = EdgeType(value)
         self._edge_type = value
 
         # update the grEdge pathCalculator
@@ -294,7 +301,7 @@ class Edge(Serializable):
         return OrderedDict(
             [
                 ("id", self.id),
-                ("edge_type", self.edge_type),
+                ("edge_type", int(self.edge_type)),
                 (
                     "start",
                     self.start_socket.id if self.start_socket is not None else None,
@@ -310,7 +317,7 @@ class Edge(Serializable):
             self.id = data["id"]
         self.start_socket = hashmap[data["start"]]
         self.end_socket = hashmap[data["end"]]
-        self.edge_type = data["edge_type"]
+        self.edge_type = EdgeType(data["edge_type"])
 
 
 # Example: using validators for Edge

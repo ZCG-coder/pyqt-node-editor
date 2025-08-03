@@ -4,20 +4,16 @@ A module containing ``NodeEditorWidget`` class
 """
 import os
 
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QBrush, QColor, QFont, QPen
+from qtpy.QtCore import Qt  # type: ignore
 from qtpy.QtWidgets import (
     QApplication,
-    QGraphicsItem,
     QLabel,
     QMessageBox,
-    QPushButton,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
-)
+)  # type: ignore
 
-from nodeeditor.node_edge import EDGE_TYPE_BEZIER, Edge
+from nodeeditor.node_edge import EdgeType, Edge
 from nodeeditor.node_graphics_view import QDMGraphicsView
 from nodeeditor.node_node import Node
 from nodeeditor.node_scene import InvalidFile, Scene
@@ -30,7 +26,7 @@ class NodeEditorWidget(QWidget):
 
     """The ``NodeEditorWidget`` class"""
 
-    def __init__(self, parent: QWidget = None):
+    def __init__(self, parent: QWidget = None) -> None:  # type: ignore
         """
         :param parent: parent widget
         :type parent: ``QWidget``
@@ -45,21 +41,21 @@ class NodeEditorWidget(QWidget):
 
         self.initUI()
 
-    def initUI(self):
+    def initUI(self) -> None:  # type: ignore
         """Set up this ``NodeEditorWidget`` with its layout,  :class:`~nodeeditor.node_scene.Scene` and
         :class:`~nodeeditor.node_graphics_view.QDMGraphicsView`"""
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
+        self.layout = QVBoxLayout()  # type: ignore
+        self.layout.setContentsMargins(0, 0, 0, 0)  # type: ignore
+        self.setLayout(self.layout)  # type: ignore
 
         # crate graphics scene
         self.scene = self.__class__.Scene_class()
 
         # create graphics view
         self.view = self.__class__.GraphicsView_class(self.scene.grScene, self)
-        self.layout.addWidget(self.view)
+        self.layout.addWidget(self.view)  # type: ignore
 
-    def isModified(self) -> bool:
+    def isModified(self) -> bool:  # type: ignore
         """Has the `Scene` been modified?
 
         :return: ``True`` if the `Scene` has been modified
@@ -67,7 +63,7 @@ class NodeEditorWidget(QWidget):
         """
         return self.scene.isModified()
 
-    def isFilenameSet(self) -> bool:
+    def isFilenameSet(self) -> bool:  # type: ignore
         """Do we have a graph loaded from file or are we creating a new one?
 
         :return: ``True`` if filename is set. ``False`` if it is a new graph not yet saved to a file
@@ -75,7 +71,7 @@ class NodeEditorWidget(QWidget):
         """
         return self.filename is not None
 
-    def getSelectedItems(self) -> list:
+    def getSelectedItems(self) -> list:  # type: ignore
         """Shortcut returning `Scene`'s currently selected items
 
         :return: list of ``QGraphicsItems``
@@ -83,7 +79,7 @@ class NodeEditorWidget(QWidget):
         """
         return self.scene.getSelectedItems()
 
-    def hasSelectedItems(self) -> bool:
+    def hasSelectedItems(self) -> bool:  # type: ignore
         """Is there something selected in the :class:`nodeeditor.node_scene.Scene`?
 
         :return: ``True`` if there is something selected in the `Scene`
@@ -91,7 +87,7 @@ class NodeEditorWidget(QWidget):
         """
         return self.getSelectedItems() != []
 
-    def canUndo(self) -> bool:
+    def canUndo(self) -> bool:  # type: ignore
         """Can Undo be performed right now?
 
         :return: ``True`` if we can undo
@@ -99,7 +95,7 @@ class NodeEditorWidget(QWidget):
         """
         return self.scene.history.canUndo()
 
-    def canRedo(self) -> bool:
+    def canRedo(self) -> bool:  # type: ignore
         """Can Redo be performed right now?
 
         :return: ``True`` if we can redo
@@ -107,29 +103,29 @@ class NodeEditorWidget(QWidget):
         """
         return self.scene.history.canRedo()
 
-    def getUserFriendlyFilename(self) -> str:
+    def getUserFriendlyFilename(self) -> str:  # type: ignore
         """Get user friendly filename. Used in the window title
 
         :return: just a base name of the file or `'New Graph'`
         :rtype: ``str``
         """
-        name = os.path.basename(self.filename) if self.isFilenameSet() else "New Graph"
+        name = os.path.basename(self.filename) if self.isFilenameSet() else "New Graph"  # type: ignore
         return name + ("*" if self.isModified() else "")
 
-    def fileNew(self):
+    def fileNew(self) -> None:  # type: ignore
         """Empty the scene (create new file)"""
         self.scene.clear()
         self.filename = None
         self.scene.history.clear()
         self.scene.history.storeInitialHistoryStamp()
 
-    def fileLoad(self, filename: str):
+    def fileLoad(self, filename: str) -> bool:  # type: ignore
         """Load serialized graph from JSON file
 
         :param filename: file to load
         :type filename: ``str``
         """
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
         try:
             self.scene.loadFromFile(filename)
             self.filename = filename
@@ -152,9 +148,9 @@ class NodeEditorWidget(QWidget):
             )
             return False
         finally:
-            QApplication.restoreOverrideCursor()
+            QApplication.restoreOverrideCursor()  # type: ignore
 
-    def fileSave(self, filename: str = None):
+    def fileSave(self, filename: str = None) -> bool:  # type: ignore
         """Save serialized graph to JSON file. When called with an empty parameter, we won't store/remember the filename.
 
         :param filename: file to store the graph
@@ -162,12 +158,12 @@ class NodeEditorWidget(QWidget):
         """
         if filename is not None:
             self.filename = filename
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
         self.scene.saveToFile(self.filename)
-        QApplication.restoreOverrideCursor()
+        QApplication.restoreOverrideCursor()  # type: ignore
         return True
 
-    def addNodes(self):
+    def addNodes(self) -> None:  # type: ignore
         """Testing method to create 3 `Nodes` with 3 `Edges` connecting them"""
         node1 = Node(self.scene, "My Awesome Node 1", inputs=[0, 0, 0], outputs=[1, 5])
         node2 = Node(self.scene, "My Awesome Node 2", inputs=[3, 3, 3], outputs=[1])
@@ -177,18 +173,27 @@ class NodeEditorWidget(QWidget):
         node3.setPos(200, -200)
 
         edge1 = Edge(
-            self.scene, node1.outputs[0], node2.inputs[0], edge_type=EDGE_TYPE_BEZIER
+            self.scene,
+            node1.outputs[0],
+            node2.inputs[0],
+            edge_type=EdgeType.IMPROVED_BEZIER,
         )
         edge2 = Edge(
-            self.scene, node2.outputs[0], node3.inputs[0], edge_type=EDGE_TYPE_BEZIER
+            self.scene,
+            node2.outputs[0],
+            node3.inputs[0],
+            edge_type=EdgeType.IMPROVED_BEZIER,
         )
         edge3 = Edge(
-            self.scene, node1.outputs[0], node3.inputs[2], edge_type=EDGE_TYPE_BEZIER
+            self.scene,
+            node1.outputs[0],
+            node3.inputs[2],
+            edge_type=EdgeType.IMPROVED_BEZIER,
         )
 
         self.scene.history.storeInitialHistoryStamp()
 
-    def addCustomNode(self):
+    def addCustomNode(self) -> None:  # type: ignore
         """Testing method to create a custom Node with custom content"""
         from nodeeditor.node_content_widget import QDMNodeContentWidget
         from nodeeditor.node_serializable import Serializable

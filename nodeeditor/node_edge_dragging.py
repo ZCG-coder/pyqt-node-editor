@@ -8,17 +8,17 @@ from nodeeditor.utils import dumpException
 
 
 class EdgeDragging:
-    def __init__(self, grView: "QGraphicsView"):
+    def __init__(self, grView: "QGraphicsView") -> None:  # type: ignore
         self.grView = grView
         # initializing these variable to know we're using them in this class...
         self.drag_edge = None
         self.drag_start_socket = None
 
-    def getEdgeClass(self):
+    def getEdgeClass(self):  # type: ignore
         """Helper function to get the Edge class. Using what Scene class provides"""
         return self.grView.grScene.scene.getEdgeClass()
 
-    def updateDestination(self, x: float, y: float):
+    def updateDestination(self, x: float, y: float) -> None:  # type: ignore
         """
         Update the end point of our dragging edge
 
@@ -32,7 +32,7 @@ class EdgeDragging:
         else:
             print(">>> Want to update self.drag_edge grEdge, but it's None!!!")
 
-    def edgeDragStart(self, item: "QGraphicsItem"):
+    def edgeDragStart(self, item: "QGraphicsItem") -> None:  # type: ignore
         """Code handling the start of a dragging an `Edge` operation"""
         try:
             self.drag_start_socket = item.socket
@@ -43,7 +43,7 @@ class EdgeDragging:
         except Exception as e:
             dumpException(e)
 
-    def edgeDragEnd(self, item: "QGraphicsItem"):
+    def edgeDragEnd(self, item: "QGraphicsItem") -> bool:  # type: ignore
         """Code handling the end of the dragging an `Edge` operation. If this code returns True then skip the
         rest of the mouse event processing. Can be called with ``None`` to cancel the edge dragging mode
 

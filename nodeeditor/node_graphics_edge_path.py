@@ -1,12 +1,14 @@
 import math
-from qtpy.QtCore import QPointF
-from qtpy.QtGui import QPainterPath
+from qtpy.QtCore import QPointF  # type: ignore
+from qtpy.QtGui import QPainterPath  # type: ignore
 
 
-EDGE_CP_ROUNDNESS = 100     #: Bezier control point distance on the line
-WEIGHT_SOURCE = 0.2         #: factor for square edge to change the midpoint between start and end socket
+EDGE_CP_ROUNDNESS = 100  #: Bezier control point distance on the line
+WEIGHT_SOURCE = (
+    0.2  #: factor for square edge to change the midpoint between start and end socket
+)
 
-EDGE_IBCP_ROUNDNESS = 75     #: Scale EDGE_CURVATURE with distance of the edge endpoints
+EDGE_IBCP_ROUNDNESS = 75  #: Scale EDGE_CURVATURE with distance of the edge endpoints
 NODE_DISTANCE = 12
 EDGE_CURVATURE = 2
 
@@ -14,22 +16,23 @@ EDGE_CURVATURE = 2
 class GraphicsEdgePathBase:
     """Base Class for calculating the graphics path to draw for an graphics Edge"""
 
-    def __init__(self, owner: 'QDMGraphicsEdge'):
+    def __init__(self, owner: "QDMGraphicsEdge") -> None:  # type: ignore
         # keep the reference to owner GraphicsEdge class
         self.owner = owner
 
-    def calcPath(self):
+    def calcPath(self) -> QPainterPath:  # type: ignore
         """Calculate the Direct line connection
 
         :returns: ``QPainterPath`` of the graphics path to draw
         :rtype: ``QPainterPath`` or ``None``
         """
-        return None
+        return QPainterPath()  # type: ignore
 
 
 class GraphicsEdgePathDirect(GraphicsEdgePathBase):
     """Direct line connection Graphics Edge"""
-    def calcPath(self) -> QPainterPath:
+
+    def calcPath(self) -> QPainterPath:  # type: ignore
         """Calculate the Direct line connection
 
         :returns: ``QPainterPath`` of the direct line
@@ -42,7 +45,8 @@ class GraphicsEdgePathDirect(GraphicsEdgePathBase):
 
 class GraphicsEdgePathBezier(GraphicsEdgePathBase):
     """Cubic line connection Graphics Edge"""
-    def calcPath(self) -> QPainterPath:
+
+    def calcPath(self) -> QPainterPath:  # type: ignore
         """Calculate the cubic Bezier line connection with 2 control points
 
         :returns: ``QPainterPath`` of the cubic Bezier line
@@ -66,30 +70,36 @@ class GraphicsEdgePathBezier(GraphicsEdgePathBase):
                 cpx_s *= -1
 
                 cpy_d = (
-                    (s[1] - d[1]) / math.fabs(
-                        (s[1] - d[1]) if (s[1] - d[1]) != 0 else 0.00001
-                    )
+                    (s[1] - d[1])
+                    / math.fabs((s[1] - d[1]) if (s[1] - d[1]) != 0 else 0.00001)
                 ) * EDGE_CP_ROUNDNESS
                 cpy_s = (
-                    (d[1] - s[1]) / math.fabs(
-                        (d[1] - s[1]) if (d[1] - s[1]) != 0 else 0.00001
-                    )
+                    (d[1] - s[1])
+                    / math.fabs((d[1] - s[1]) if (d[1] - s[1]) != 0 else 0.00001)
                 ) * EDGE_CP_ROUNDNESS
 
         path = QPainterPath(QPointF(self.owner.posSource[0], self.owner.posSource[1]))
-        path.cubicTo( s[0] + cpx_s, s[1] + cpy_s, d[0] + cpx_d, d[1] + cpy_d, self.owner.posDestination[0], self.owner.posDestination[1])
+        path.cubicTo(
+            s[0] + cpx_s,
+            s[1] + cpy_s,
+            d[0] + cpx_d,
+            d[1] + cpy_d,
+            self.owner.posDestination[0],
+            self.owner.posDestination[1],
+        )
 
         return path
 
 
 class GraphicsEdgePathSquare(GraphicsEdgePathBase):
     """Square line connection Graphics Edge"""
-    def __init__(self, *args, handle_weight=0.5, **kwargs):
-        super().__init__(*args, **kwargs)
+
+    def __init__(self, owner: "QDMGraphicsEdge", handle_weight=0.5) -> None:  # type: ignore
+        super().__init__(owner)
         self.rand = None
         self.handle_weight = handle_weight
 
-    def calcPath(self):
+    def calcPath(self) -> QPainterPath:  # type: ignore
         """Calculate the square edge line connection
 
         :returns: ``QPainterPath`` of the edge square line
@@ -112,7 +122,7 @@ class GraphicsEdgePathSquare(GraphicsEdgePathBase):
 class GraphicsEdgePathImprovedSharp(GraphicsEdgePathBase):
     """Better Cubic line connection Graphics Edge"""
 
-    def calcPath(self) -> QPainterPath:
+    def calcPath(self) -> QPainterPath:  # type: ignore
         """Calculate the Direct line connection
 
         :returns: ``QPainterPath`` of the painting line
@@ -120,8 +130,8 @@ class GraphicsEdgePathImprovedSharp(GraphicsEdgePathBase):
         """
         sx, sy = self.owner.posSource
         dx, dy = self.owner.posDestination
-        distx, disty = dx-sx, dy-sy
-        dist = math.sqrt(distx*distx + disty*disty)
+        distx, disty = dx - sx, dy - sy
+        dist = math.sqrt(distx * distx + disty * disty)
 
         # is start / end socket on left side?
         sleft = self.owner.edge.start_socket.position <= 3
@@ -141,7 +151,7 @@ class GraphicsEdgePathImprovedSharp(GraphicsEdgePathBase):
             path.lineTo(sx + node_sdist, sy)
             path.lineTo(dx + node_edist, dy)
 
-        path.lineTo( dx, dy)
+        path.lineTo(dx, dy)
 
         return path
 
@@ -149,7 +159,7 @@ class GraphicsEdgePathImprovedSharp(GraphicsEdgePathBase):
 class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
     """Better Cubic line connection Graphics Edge"""
 
-    def calcPath(self) -> QPainterPath:
+    def calcPath(self) -> QPainterPath:  # type: ignore
         """Calculate the Direct line connection
 
         :returns: ``QPainterPath`` of the painting line
@@ -157,8 +167,8 @@ class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
         """
         sx, sy = self.owner.posSource
         dx, dy = self.owner.posDestination
-        distx, disty = dx-sx, dy-sy
-        dist = math.sqrt(distx*distx + disty*disty)
+        distx, disty = dx - sx, dy - sy
+        dist = math.sqrt(distx * distx + disty * disty)
 
         # is start / end socket on left side?
         sleft = self.owner.edge.start_socket.position <= 3
@@ -169,11 +179,12 @@ class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
         if self.owner.edge.end_socket is not None:
             eleft = self.owner.edge.end_socket.position <= 3
 
-
         path = QPainterPath(QPointF(sx, sy))
 
         if abs(dist) > NODE_DISTANCE:
-            curvature = max(EDGE_CURVATURE, (EDGE_CURVATURE * abs(dist)) / EDGE_IBCP_ROUNDNESS)
+            curvature = max(
+                EDGE_CURVATURE, (EDGE_CURVATURE * abs(dist)) / EDGE_IBCP_ROUNDNESS
+            )
 
             node_sdist = (-NODE_DISTANCE) if sleft else NODE_DISTANCE
             node_edist = (-NODE_DISTANCE) if eleft else NODE_DISTANCE
@@ -183,11 +194,11 @@ class GraphicsEdgePathImprovedBezier(GraphicsEdgePathBase):
             path.cubicTo(
                 QPointF(sx + node_sdist * curvature, sy),
                 QPointF(dx + node_edist * curvature, dy),
-                QPointF(dx + node_edist, dy)
+                QPointF(dx + node_edist, dy),
             )
 
             path.lineTo(dx + node_edist, dy)
 
-        path.lineTo( dx, dy)
+        path.lineTo(dx, dy)
 
         return path

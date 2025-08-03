@@ -5,15 +5,15 @@ A module containing Serializable "Interface". We pretend its an abstract class
 from collections import OrderedDict
 
 
-class Serializable():
-    def __init__(self):
+class Serializable:
+    def __init__(self) -> None:  # type: ignore
         """
         Default constructor automatically creates data which are common to any serializable object.
         In our case we create ``self.id`` which we use in every object in NodeEditor.
         """
         self.id = id(self)
 
-    def serialize(self) -> OrderedDict:
+    def serialize(self) -> OrderedDict:  # type: ignore
         """
         Serialization method to serialize this class data into ``OrderedDict`` which can be easily stored
         in memory or file.
@@ -21,9 +21,9 @@ class Serializable():
         :return: data serialized in ``OrderedDict``
         :rtype: ``OrderedDict``
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
-    def deserialize(self, data: dict, hashmap: dict={}, restore_id: bool=True) -> bool:
+    def deserialize(self, data: dict, hashmap: dict = {}, restore_id: bool = True) -> bool:  # type: ignore
         """
         Deserialization method which take data in python ``dict`` format with helping `hashmap` containing
         references to existing entities.
@@ -38,4 +38,4 @@ class Serializable():
         :return: ``True`` if deserialization was successful, otherwise ``False``
         :rtype: ``bool``
         """
-        raise NotImplemented()
+        raise NotImplementedError()

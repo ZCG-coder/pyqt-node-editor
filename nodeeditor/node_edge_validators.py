@@ -21,12 +21,17 @@ application start with calling this:
 
 """
 
+from typing import TYPE_CHECKING
 
-def print_error(*args):
+if TYPE_CHECKING:
+    from nodeeditor.node_socket import Socket
+
+
+def print_error(*args) -> None:  # type: ignore
     """Helper method which prints to console if `DEBUG` is set to `True`"""
 
 
-def edge_validator_debug(input: "Socket", output: "Socket") -> bool:
+def edge_validator_debug(input: "Socket", output: "Socket") -> bool:  # type: ignore
     """This will consider edge always valid, however writes bunch of debug stuff into console"""
     print("VALIDATING:")
     print(input, "input" if input.is_input else "output", "of node", input.node)
@@ -41,7 +46,7 @@ def edge_validator_debug(input: "Socket", output: "Socket") -> bool:
 
 def edge_cannot_connect_two_outputs_or_two_inputs(
     input: "Socket", output: "Socket"
-) -> bool:
+) -> bool:  # type: ignore
     """Edge is invalid if it connects 2 output sockets or 2 input sockets"""
     if input.is_output and output.is_output:
         print_error("Connecting 2 outputs")
@@ -56,7 +61,7 @@ def edge_cannot_connect_two_outputs_or_two_inputs(
 
 def edge_cannot_connect_input_and_output_of_same_node(
     input: "Socket", output: "Socket"
-) -> bool:
+) -> bool:  # type: ignore
     """Edge is invalid if it connects the same node"""
     if input.node == output.node:
         print_error("Connecting the same node")

@@ -91,7 +91,8 @@ class QDMGraphicsNode(QGraphicsItem):
 
         self._color = QColor("#7F000000")
         self._color_selected = Colors.SELECTED.value
-        self._color_hovered = QColor("#FF37A6FF")
+        # self._color_hovered = QColor("#FF37A6FF")
+        self._color_hovered = QColor(self.node.color)
 
         self._pen_default = QPen(self._color)
         self._pen_default.setWidthF(2.0)

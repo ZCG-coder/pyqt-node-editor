@@ -2,16 +2,19 @@
 """
 A module containing `Graphics View` for NodeEditor
 """
-from qtpy.QtCore import QEvent, QPoint, QPointF, QRectF, Qt, Signal
+from typing import Optional
+from enum import IntEnum
+from qtpy.QtCore import QEvent, QPoint, QPointF, QRectF, Qt, Signal  # type: ignore
 from qtpy.QtGui import (
     QDragEnterEvent,
     QDropEvent,
+    QInputEvent,
     QKeyEvent,
     QMouseEvent,
     QPainter,
     QWheelEvent,
 )
-from qtpy.QtWidgets import QApplication, QGraphicsView
+from qtpy.QtWidgets import QApplication, QGraphicsView, QWidget
 
 from nodeeditor import _QT_API_NAME as QT_API
 from nodeeditor.node_edge_dragging import EdgeDragging
@@ -29,11 +32,14 @@ from nodeeditor.utils import (
     pp,
 )
 
-MODE_NOOP = 1  #: Mode representing ready state
-MODE_EDGE_DRAG = 2  #: Mode representing when we drag edge state
-MODE_EDGE_CUT = 3  #: Mode representing when we draw a cutting edge
-MODE_EDGES_REROUTING = 4  #: Mode representing when we re-route existing edges
-MODE_NODE_DRAG = 5  #: Mode representing when we drag a node to calculate dropping on intersecting edge
+
+class NodeEditorMode(IntEnum):
+    NOOP = 1  #: Mode representing ready state
+    EDGE_DRAG = 2  #: Mode representing when we drag edge state
+    EDGE_CUT = 3  #: Mode representing when we draw a cutting edge
+    EDGES_REROUTING = 4  #: Mode representing when we re-route existing edges
+    NODE_DRAG = 5  #: Mode representing when we drag a node to calculate dropping on intersecting edge
+
 
 STATE_STRING = ["", "Noop", "Edge Drag", "Edge Cut", "Edge Rerouting", "Node Drag"]
 
@@ -48,20 +54,14 @@ EDGE_SNAPPING_RADIUS = 24
 #: Enable socket snapping feature
 EDGE_SNAPPING = True
 
-DEBUG = False
-DEBUG_MMB_SCENE_ITEMS = False
-DEBUG_MMB_LAST_SELECTIONS = False
-DEBUG_EDGE_INTERSECT = False
-DEBUG_STATE = False
 
-
-class QDMGraphicsView(QGraphicsView):
+class QDMGraphicsView(QGraphicsView):  # type: ignore
     """Class representing NodeEditor's `Graphics View`"""
 
     #: pyqtSignal emitted when cursor position on the `Scene` has changed
     scenePosChanged = Signal(int, int)
 
-    def __init__(self, grScene: "QDMGraphicsScene", parent: "QWidget" = None):
+    def __init__(self, grScene: "QDMGraphicsScene", parent: Optional[QWidget] = None):
         """
         :param grScene: reference to the :class:`~nodeeditor.node_graphics_scene.QDMGraphicsScene`
         :type grScene: :class:`~nodeeditor.node_graphics_scene.QDMGraphicsScene`
@@ -86,7 +86,7 @@ class QDMGraphicsView(QGraphicsView):
 
         self.setScene(self.grScene)
 
-        self.mode = MODE_NOOP
+        self.mode = NodeEditorMode.NOOP
         self.editingFlag = False
         self.rubberBandDraggingRectangle = False
 
@@ -158,11 +158,20 @@ class QDMGraphicsView(QGraphicsView):
 
     def isSnappingEnabled(self, event: "QInputEvent" = None) -> bool:
         """Returns ``True`` if snapping is currently enabled"""
-        return EDGE_SNAPPING and isCTRLPressed(event) if event else True
+        if not EDGE_SNAPPING:
+            return False
+
+        if event is None:
+            return True
+
+        if isCTRLPressed(event):
+            return True
+
+        return False
 
     def resetMode(self):
         """Helper function to re-set the grView's State Machine state to the default"""
-        self.mode = MODE_NOOP
+        self.mode = NodeEditorMode.NOOP
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         """Trigger our registered `Drag Enter` events"""
@@ -217,58 +226,6 @@ class QDMGraphicsView(QGraphicsView):
 
         item = self.getItemAtClick(event)
 
-        # debug printout
-        if DEBUG_MMB_SCENE_ITEMS:
-            if isinstance(item, QDMGraphicsEdge):
-                print(
-                    "MMB DEBUG:",
-                    item.edge,
-                    "\n\t",
-                    item.edge.grEdge if item.edge.grEdge is not None else None,
-                )
-                return
-
-            if isinstance(item, QDMGraphicsSocket):
-                print(
-                    "MMB DEBUG:",
-                    item.socket,
-                    "socket_type:",
-                    item.socket.socket_type,
-                    "has edges:",
-                    "no" if item.socket.edges == [] else "",
-                )
-                if item.socket.edges:
-                    for edge in item.socket.edges:
-                        print("\t", edge)
-                return
-
-        if DEBUG_MMB_SCENE_ITEMS and (
-            item is None or self.mode == MODE_EDGES_REROUTING
-        ):
-            print("SCENE:")
-            print("  Nodes:")
-            for node in self.grScene.scene.nodes:
-                print("\t", node)
-            print("  Edges:")
-            for edge in self.grScene.scene.edges:
-                print(
-                    "\t",
-                    edge,
-                    "\n\t\tgrEdge:",
-                    edge.grEdge if edge.grEdge is not None else None,
-                )
-
-            if isCTRLPressed(event):
-                print("  Graphic Items in GraphicScene:")
-                for item in self.grScene.items():
-                    print("    ", item)
-
-        if DEBUG_MMB_LAST_SELECTIONS and isSHIFTPressed(event):
-            print(
-                "scene _last_selected_items:", self.grScene.scene._last_selected_items
-            )
-            return
-
         # faking events for enable MMB dragging the scene
         if QT_API in ("pyqt5", "pyside2"):
             releaseEvent = QMouseEvent(
@@ -279,7 +236,7 @@ class QDMGraphicsView(QGraphicsView):
                 Qt.NoButton,
                 event.modifiers(),
             )
-        elif QT_API in ("pyqt6", "pyside6"):
+        else:
             releaseEvent = QMouseEvent(
                 QEvent.MouseButtonRelease,
                 event.localPos(),
@@ -298,7 +255,7 @@ class QDMGraphicsView(QGraphicsView):
                 event.buttons() | Qt.LeftButton,
                 event.modifiers(),
             )
-        elif QT_API in ("pyqt6", "pyside6"):
+        else:
             fakeEvent = QMouseEvent(
                 event.type(),
                 event.localPos(),
@@ -319,7 +276,7 @@ class QDMGraphicsView(QGraphicsView):
                 event.buttons() & ~Qt.LeftButton,
                 event.modifiers(),
             )
-        elif QT_API in ("pyqt6", "pyside6"):
+        else:
             fakeEvent = QMouseEvent(
                 event.type(),
                 event.localPos(),
@@ -339,8 +296,6 @@ class QDMGraphicsView(QGraphicsView):
         # we store the position of last LMB click
         self.last_lmb_click_scene_pos = self.mapToScene(event.pos())
 
-        # if DEBUG: print("LMB Click on", item, self.debug_modifiers(event))
-
         # logic - Shift + LMB Node
         if hasattr(item, "node") or isinstance(item, QDMGraphicsEdge) or item is None:
             if isSHIFTPressed(event):
@@ -354,7 +309,7 @@ class QDMGraphicsView(QGraphicsView):
                         event.buttons() | Qt.LeftButton,
                         event.modifiers() | Qt.ControlModifier,
                     )
-                elif QT_API in ("pyqt6", "pyside6"):
+                else:
                     fakeEvent = QMouseEvent(
                         QEvent.MouseButtonPress,
                         event.localPos(),
@@ -366,39 +321,35 @@ class QDMGraphicsView(QGraphicsView):
                 return
 
         if hasattr(item, "node"):
-            if DEBUG_EDGE_INTERSECT:
-                print("View::leftMouseButtonPress - Start dragging a node")
-            if self.mode == MODE_NOOP:
-                self.mode = MODE_NODE_DRAG
+            if self.mode == NodeEditorMode.NOOP:
+                self.mode = NodeEditorMode.NODE_DRAG
                 self.edgeIntersect.enterState(item.node)
-                if DEBUG_EDGE_INTERSECT:
-                    print(">> edgeIntersect start:", self.edgeIntersect.draggedNode)
 
         # support for snapping
         if self.isSnappingEnabled(event):
             item = self.snapping.getSnappedSocketItem(event)
 
         if isinstance(item, QDMGraphicsSocket):
-            if self.mode == MODE_NOOP and isCTRLPressed(event):
+            if self.mode == NodeEditorMode.NOOP and isCTRLPressed(event):
                 socket = item.socket
                 if socket.hasAnyEdge():
-                    self.mode = MODE_EDGES_REROUTING
+                    self.mode = NodeEditorMode.EDGES_REROUTING
                     self.rerouting.startRerouting(socket)
                     return
 
-            if self.mode == MODE_NOOP:
-                self.mode = MODE_EDGE_DRAG
+            if self.mode == NodeEditorMode.NOOP:
+                self.mode = NodeEditorMode.EDGE_DRAG
                 self.dragging.edgeDragStart(item)
                 return
 
-        if self.mode == MODE_EDGE_DRAG:
+        if self.mode == NodeEditorMode.EDGE_DRAG:
             res = self.dragging.edgeDragEnd(item)
             if res:
                 return
 
         if item is None:
             if isCTRLPressed(event):
-                self.mode = MODE_EDGE_CUT
+                self.mode = NodeEditorMode.EDGE_CUT
                 if QT_API in ("pyqt5", "pyside2"):
                     fakeEvent = QMouseEvent(
                         QEvent.MouseButtonRelease,
@@ -408,7 +359,7 @@ class QDMGraphicsView(QGraphicsView):
                         Qt.NoButton,
                         event.modifiers(),
                     )
-                elif QT_API in ("pyqt6", "pyside6"):
+                else:
                     fakeEvent = QMouseEvent(
                         QEvent.MouseButtonRelease,
                         event.localPos(),
@@ -448,7 +399,7 @@ class QDMGraphicsView(QGraphicsView):
                             Qt.NoButton,
                             event.modifiers() | Qt.ControlModifier,
                         )
-                    elif QT_API in ("pyqt6", "pyside6"):
+                    else:
                         fakeEvent = QMouseEvent(
                             event.type(),
                             event.localPos(),
@@ -459,7 +410,7 @@ class QDMGraphicsView(QGraphicsView):
                     super().mouseReleaseEvent(fakeEvent)
                     return
 
-            if self.mode == MODE_EDGE_DRAG:
+            if self.mode == NodeEditorMode.EDGE_DRAG:
                 if self.distanceBetweenClickAndReleaseIsOff(event):
                     if self.isSnappingEnabled(event):
                         item = self.snapping.getSnappedSocketItem(event)
@@ -468,7 +419,7 @@ class QDMGraphicsView(QGraphicsView):
                     if res:
                         return
 
-            if self.mode == MODE_EDGES_REROUTING:
+            if self.mode == NodeEditorMode.EDGES_REROUTING:
                 if self.isSnappingEnabled(event):
                     item = self.snapping.getSnappedSocketItem(event)
 
@@ -486,20 +437,20 @@ class QDMGraphicsView(QGraphicsView):
 
                 # don't forget to end the REROUTING MODE
 
-                self.mode = MODE_NOOP
+                self.mode = NodeEditorMode.NOOP
 
-            if self.mode == MODE_EDGE_CUT:
+            if self.mode == NodeEditorMode.EDGE_CUT:
                 self.cutIntersectingEdges()
                 self.cutline.line_points = []
                 self.cutline.update()
                 QApplication.setOverrideCursor(Qt.ArrowCursor)
-                self.mode = MODE_NOOP
+                self.mode = NodeEditorMode.NOOP
                 return
 
-            if self.mode == MODE_NODE_DRAG:
+            if self.mode == NodeEditorMode.NODE_DRAG:
                 scenepos = self.mapToScene(event.pos())
                 self.edgeIntersect.leaveState(scenepos.x(), scenepos.y())
-                self.mode = MODE_NOOP
+                self.mode = NodeEditorMode.NOOP
                 self.update()
 
             if self.rubberBandDraggingRectangle:
@@ -554,16 +505,16 @@ class QDMGraphicsView(QGraphicsView):
             if modified:
                 self.update()
 
-            if self.mode == MODE_EDGE_DRAG:
+            if self.mode == NodeEditorMode.EDGE_DRAG:
                 self.dragging.updateDestination(scenepos.x(), scenepos.y())
 
-            if self.mode == MODE_NODE_DRAG:
+            if self.mode == NodeEditorMode.NODE_DRAG:
                 self.edgeIntersect.update(scenepos.x(), scenepos.y())
 
-            if self.mode == MODE_EDGES_REROUTING:
+            if self.mode == NodeEditorMode.EDGES_REROUTING:
                 self.rerouting.updateScenePos(scenepos.x(), scenepos.y())
 
-            if self.mode == MODE_EDGE_CUT and self.cutline is not None:
+            if self.mode == NodeEditorMode.EDGE_CUT and self.cutline is not None:
                 self.cutline.line_points.append(scenepos)
                 self.cutline.update()
 

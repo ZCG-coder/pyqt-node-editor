@@ -3,20 +3,17 @@
 A module containing NodeEditor's class for representing Socket and Socket Position Constants.
 """
 from collections import OrderedDict
+from enum import IntEnum
+from typing import Any, Dict
 from nodeeditor.node_serializable import Serializable
 from nodeeditor.node_graphics_socket import QDMGraphicsSocket
 
 
-LEFT_TOP = 1        #:
-LEFT_CENTER =2      #:
-LEFT_BOTTOM = 3     #:
-RIGHT_TOP = 4       #:
-RIGHT_CENTER = 5    #:
-RIGHT_BOTTOM = 6    #:
-
-
-DEBUG = False
-DEBUG_REMOVE_WARNINGS = False
+class SocketPosition(IntEnum):
+    LEFT_TOP = 1  #:
+    LEFT_BOTTOM = 3  #:
+    RIGHT_TOP = 4  #:
+    RIGHT_BOTTOM = 6  #:
 
 
 class Socket(Serializable):
@@ -24,8 +21,16 @@ class Socket(Serializable):
 
     """Class representing Socket."""
 
-    def __init__(self, node: 'Node', index: int=0, position: int=LEFT_TOP, socket_type: int=1, multi_edges: bool=True,
-                 count_on_this_node_side: int=1, is_input: bool=False):
+    def __init__(
+        self,
+        node: "Node",
+        index: int = 0,
+        position: int = SocketPosition.LEFT_TOP,
+        socket_params: Dict[str, Any] = {},
+        multi_edges: bool = True,
+        count_on_this_node_side: int = 1,
+        is_input: bool = False,
+    ):
         """
         :param node: reference to the :class:`~nodeeditor.node_node.Node` containing this `Socket`
         :type node: :class:`~nodeeditor.node_node.Node`
@@ -58,15 +63,12 @@ class Socket(Serializable):
         self.node = node
         self.position = position
         self.index = index
-        self.socket_type = socket_type
+        self.socket_type = socket_params.get("socket_type", 0)
         self.count_on_this_node_side = count_on_this_node_side
         self.is_multi_edges = multi_edges
         self.is_input = is_input
         self.is_output = not self.is_input
-
-
-        if DEBUG: print("Socket -- creating with", self.index, self.position, "for nodeeditor", self.node)
-
+        self.name = socket_params.get("name", "S")
 
         self.grSocket = self.__class__.Socket_GR_Class(self)
 
@@ -76,7 +78,10 @@ class Socket(Serializable):
 
     def __str__(self):
         return "<Socket #%d %s %s..%s>" % (
-            self.index, "ME" if self.is_multi_edges else "SE", hex(id(self))[2:5], hex(id(self))[-3:]
+            self.index,
+            "ME" if self.is_multi_edges else "SE",
+            hex(id(self))[2:5],
+            hex(id(self))[-3:],
         )
 
     def delete(self):
@@ -103,7 +108,11 @@ class Socket(Serializable):
     def setSocketPosition(self):
         """Helper function to set `Graphics Socket` position. Exact socket position is calculated
         inside :class:`~nodeeditor.node_node.Node`."""
-        self.grSocket.setPos(*self.node.getSocketPosition(self.index, self.position, self.count_on_this_node_side))
+        self.grSocket.setPos(
+            *self.node.getSocketPosition(
+                self.index, self.position, self.count_on_this_node_side
+            )
+        )
 
     def getSocketPosition(self):
         """
@@ -111,11 +120,10 @@ class Socket(Serializable):
             :class:`~nodeeditor.node_node.Node`
         :rtype: ``x, y`` position
         """
-        if DEBUG: print("  GSP: ", self.index, self.position, "nodeeditor:", self.node)
-        res = self.node.getSocketPosition(self.index, self.position, self.count_on_this_node_side)
-        if DEBUG: print("  res", res)
+        res = self.node.getSocketPosition(
+            self.index, self.position, self.count_on_this_node_side
+        )
         return res
-
 
     def hasAnyEdge(self) -> bool:
         """
@@ -126,7 +134,7 @@ class Socket(Serializable):
         """
         return len(self.edges) > 0
 
-    def isConnected(self, edge: 'Edge') -> bool:
+    def isConnected(self, edge: "Edge") -> bool:
         """
         Returns ``True`` if :class:`~nodeeditor.node_edge.Edge` is connected to this `Socket`
 
@@ -137,7 +145,7 @@ class Socket(Serializable):
         """
         return edge in self.edges
 
-    def addEdge(self, edge: 'Edge'):
+    def addEdge(self, edge: "Edge"):
         """
         Append an Edge to the list of connected Edges
 
@@ -146,26 +154,23 @@ class Socket(Serializable):
         """
         self.edges.append(edge)
 
-    def removeEdge(self, edge: 'Edge'):
+    def removeEdge(self, edge: "Edge"):
         """
         Disconnect passed :class:`~nodeeditor.node_edge.Edge` from this `Socket`
         :param edge: :class:`~nodeeditor.node_edge.Edge` to disconnect
         :type edge: :class:`~nodeeditor.node_edge.Edge`
         """
-        if edge in self.edges: self.edges.remove(edge)
-        else:
-            if DEBUG_REMOVE_WARNINGS:
-                print("!W:", "Socket::removeEdge", "wanna remove edge", edge,
-                      "from self.edges but it's not in the list!")
+        if edge in self.edges:
+            self.edges.remove(edge)
 
-    def removeAllEdges(self, silent: bool=False):
+    def removeAllEdges(self, silent: bool = False):
         """Disconnect all `Edges` from this `Socket`"""
         while self.edges:
             edge = self.edges.pop(0)
             if silent:
                 edge.remove(silent_for_socket=self)
             else:
-                edge.remove()       # just remove all with notifications
+                edge.remove()  # just remove all with notifications
 
     def determineMultiEdges(self, data: dict) -> bool:
         """
@@ -178,24 +183,32 @@ class Socket(Serializable):
         :type data: ``dict``
         :return: ``True`` if this `Socket` should support multi_edges
         """
-        if 'multi_edges' in data:
-            return data['multi_edges']
+        if "multi_edges" in data:
+            return data["multi_edges"]
         else:
             # probably older version of file, make RIGHT socket multiedged by default
-            return data['position'] in (RIGHT_BOTTOM, RIGHT_TOP)
+            return data["position"] in (
+                SocketPosition.RIGHT_BOTTOM,
+                SocketPosition.RIGHT_TOP,
+            )
 
     def serialize(self) -> OrderedDict:
-        return OrderedDict([
-            ('id', self.id),
-            ('index', self.index),
-            ('multi_edges', self.is_multi_edges),
-            ('position', self.position),
-            ('socket_type', self.socket_type),
-        ])
+        return OrderedDict(
+            [
+                ("id", self.id),
+                ("index", self.index),
+                ("multi_edges", self.is_multi_edges),
+                ("position", self.position),
+                ("socket_type", self.socket_type),
+            ]
+        )
 
-    def deserialize(self, data: dict, hashmap: dict={}, restore_id: bool=True) -> bool:
-        if restore_id: self.id = data['id']
+    def deserialize(
+        self, data: dict, hashmap: dict = {}, restore_id: bool = True
+    ) -> bool:
+        if restore_id:
+            self.id = data["id"]
         self.is_multi_edges = self.determineMultiEdges(data)
-        self.changeSocketType(data['socket_type'])
-        hashmap[data['id']] = self
+        self.changeSocketType(data["socket_type"])
+        hashmap[data["id"]] = self
         return True

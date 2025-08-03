@@ -4,23 +4,17 @@ A module containing NodeEditor's class for representing `Node`.
 """
 from collections import OrderedDict
 
+from typing import List, Optional, Tuple, Union
 from qtpy.QtGui import QColor
 
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_graphics_node import QDMGraphicsNode
 from nodeeditor.node_serializable import Serializable
 from nodeeditor.node_socket import (
-    LEFT_BOTTOM,
-    LEFT_CENTER,
-    LEFT_TOP,
-    RIGHT_BOTTOM,
-    RIGHT_CENTER,
-    RIGHT_TOP,
+    SocketPosition,
     Socket,
 )
 from nodeeditor.utils_no_qt import dumpException, pp
-
-DEBUG = False
 
 
 class Node(Serializable):
@@ -82,6 +76,16 @@ class Node(Serializable):
         # dirty and evaluation
         self._is_dirty = False
         self._is_invalid = False
+
+        self._height = 100
+
+    @property
+    def height(self) -> int:
+        return self._height
+
+    @height.setter
+    def height(self, new_height):
+        self._height = new_height
 
     def __str__(self):
         return "<%s:%s %s..%s>" % (
@@ -154,17 +158,15 @@ class Node(Serializable):
         """Initialize properties and socket information"""
         self.socket_spacing = 22
 
-        self.input_socket_position = LEFT_BOTTOM
-        self.output_socket_position = RIGHT_TOP
+        self.input_socket_position = SocketPosition.LEFT_BOTTOM
+        self.output_socket_position = SocketPosition.RIGHT_TOP
         self.input_multi_edged = False
         self.output_multi_edged = True
         self.socket_offsets = {
-            LEFT_BOTTOM: -1,
-            LEFT_CENTER: -1,
-            LEFT_TOP: -1,
-            RIGHT_BOTTOM: 1,
-            RIGHT_CENTER: 1,
-            RIGHT_TOP: 1,
+            SocketPosition.LEFT_BOTTOM: -1,
+            SocketPosition.LEFT_TOP: -1,
+            SocketPosition.RIGHT_BOTTOM: 1,
+            SocketPosition.RIGHT_TOP: 1,
         }
 
     def initSockets(self, inputs: list, outputs: list, reset: bool = True):
@@ -195,7 +197,7 @@ class Node(Serializable):
                 node=self,
                 index=counter,
                 position=self.input_socket_position,
-                socket_type=item,
+                socket_params=item,
                 multi_edges=self.input_multi_edged,
                 count_on_this_node_side=len(inputs),
                 is_input=True,
@@ -203,19 +205,25 @@ class Node(Serializable):
             counter += 1
             self.inputs.append(socket)
 
+        sockets_in = counter
+
         counter = 0
         for item in outputs:
             socket = self.__class__.Socket_class(
                 node=self,
                 index=counter,
                 position=self.output_socket_position,
-                socket_type=item,
+                socket_params=item,
                 multi_edges=self.output_multi_edged,
                 count_on_this_node_side=len(outputs),
                 is_input=False,
             )
             counter += 1
             self.outputs.append(socket)
+
+        sockets_max = max(sockets_in, counter)
+        self.height = (sockets_max - 2) * self.socket_spacing + 100
+        self.grNode.set_height(self.height)
 
     def onEdgeConnectionChanged(self, new_edge: "Edge"):
         """
@@ -266,7 +274,7 @@ class Node(Serializable):
 
     def getSocketPosition(
         self, index: int, position: int, num_out_of: int = 1
-    ) -> "(x, y)":
+    ) -> List[float]:
         """
         Get the relative `x, y` position of a :class:`~nodeeditor.node_socket.Socket`. This is used for placing
         the `Graphics Sockets` on `Graphics Node`.
@@ -282,11 +290,17 @@ class Node(Serializable):
         """
         x = (
             self.socket_offsets[position]
-            if (position in (LEFT_TOP, LEFT_CENTER, LEFT_BOTTOM))
-            else self.grNode.width + self.socket_offsets[position]
+            if (
+                position
+                in (
+                    SocketPosition.LEFT_TOP,
+                    SocketPosition.LEFT_BOTTOM,
+                )
+            )
+            else self.grNode.width + self.socket_offsets[position] + 200
         )
 
-        if position in (LEFT_BOTTOM, RIGHT_BOTTOM):
+        if position in (SocketPosition.LEFT_BOTTOM, SocketPosition.RIGHT_BOTTOM):
             # start from bottom
             y = (
                 self.grNode.height
@@ -294,29 +308,7 @@ class Node(Serializable):
                 - self.grNode.title_vertical_padding
                 - index * self.socket_spacing
             )
-        elif position in (LEFT_CENTER, RIGHT_CENTER):
-            num_sockets = num_out_of
-            node_height = self.grNode.height
-            top_offset = (
-                self.grNode.title_height
-                + 2 * self.grNode.title_vertical_padding
-                + self.grNode.edge_padding
-            )
-            available_height = node_height - top_offset
-
-            total_height_of_all_sockets = num_sockets * self.socket_spacing
-            new_top = available_height - total_height_of_all_sockets
-
-            # y = top_offset + index * self.socket_spacing + new_top / 2
-            y = (
-                top_offset
-                + available_height / 2.0
-                + (index - 0.5) * self.socket_spacing
-            )
-            if num_sockets > 1:
-                y -= self.socket_spacing * (num_sockets - 1) / 2
-
-        elif position in (LEFT_TOP, RIGHT_TOP):
+        elif position in (SocketPosition.LEFT_TOP, SocketPosition.RIGHT_TOP):
             # start from top
             y = (
                 self.grNode.title_height
@@ -330,7 +322,7 @@ class Node(Serializable):
 
         return [x, y]
 
-    def getSocketScenePosition(self, socket: "Socket") -> "(x, y)":
+    def getSocketScenePosition(self, socket: "Socket") -> Tuple[float, float]:
         """
         Get absolute Socket position in the Scene
 
@@ -354,25 +346,13 @@ class Node(Serializable):
         """
         Safely remove this Node
         """
-        if DEBUG:
-            print("> Removing Node", self)
-        if DEBUG:
-            print(" - remove all edges from sockets")
         for socket in self.inputs + self.outputs:
             # if socket.hasEdge():
             for edge in socket.edges.copy():
-                if DEBUG:
-                    print("    - removing from socket:", socket, "edge:", edge)
                 edge.remove()
-        if DEBUG:
-            print(" - remove grNode")
         self.scene.grScene.removeItem(self.grNode)
         self.grNode = None
-        if DEBUG:
-            print(" - remove node from the scene")
         self.scene.removeNode(self)
-        if DEBUG:
-            print(" - everything was done.")
 
     # node evaluation stuff
 
@@ -487,7 +467,7 @@ class Node(Serializable):
                 other_nodes.append(other_node)
         return other_nodes
 
-    def getInput(self, index: int = 0) -> ["Node", None]:
+    def getInput(self, index: int = 0) -> Optional["Node"]:
         """
         Get the **first**  `Node` connected to the  Input specified by `index`
 
@@ -508,7 +488,9 @@ class Node(Serializable):
             dumpException(e)
             return None
 
-    def getInputWithSocket(self, index: int = 0) -> [("Node", "Socket"), (None, None)]:
+    def getInputWithSocket(
+        self, index: int = 0
+    ) -> Union[Tuple["Node", Socket], Tuple[None, None]]:
         """
         Get the **first**  `Node` connected to the Input specified by `index` and the connection `Socket`
 
@@ -529,7 +511,9 @@ class Node(Serializable):
             dumpException(e)
             return None, None
 
-    def getInputWithSocketIndex(self, index: int = 0) -> ("Node", int):
+    def getInputWithSocketIndex(
+        self, index: int = 0
+    ) -> Tuple[Optional["Node"], Optional[int]]:
         """
         Get the **first**  `Node` connected to the Input specified by `index` and the connection `Socket`
 
@@ -550,7 +534,7 @@ class Node(Serializable):
             dumpException(e)
             return None, None
 
-    def getInputs(self, index: int = 0) -> "List[Node]":
+    def getInputs(self, index: int = 0) -> List["Node"]:
         """
         Get **all** `Nodes` connected to the Input specified by `index`
 
@@ -646,7 +630,7 @@ class Node(Serializable):
                         node=self,
                         index=socket_data["index"],
                         position=socket_data["position"],
-                        socket_type=socket_data["socket_type"],
+                        socket_params=socket_data["socket_type"],
                         count_on_this_node_side=num_inputs,
                         is_input=True,
                     )
@@ -668,7 +652,7 @@ class Node(Serializable):
                         node=self,
                         index=socket_data["index"],
                         position=socket_data["position"],
-                        socket_type=socket_data["socket_type"],
+                        socket_params=socket_data["socket_type"],
                         count_on_this_node_side=num_outputs,
                         is_input=False,
                     )

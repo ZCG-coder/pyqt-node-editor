@@ -2,15 +2,16 @@
 """
 A module containing Graphics representation of :class:`~nodeeditor.node_node.Node`
 """
+from typing import Optional
 from qtpy.QtCore import QRectF, Qt
-from qtpy.QtGui import QBrush, QColor, QFont, QPainterPath, QPen
+from qtpy.QtGui import QBrush, QColor, QPainterPath, QPen
 from qtpy.QtWidgets import QApplication, QGraphicsItem, QGraphicsTextItem, QWidget
 
 
-class QDMGraphicsNode(QGraphicsItem):
+class QDMGraphicsNode(QGraphicsItem):  # type: ignore
     """Class describing Graphics representation of :class:`~nodeeditor.node_node.Node`"""
 
-    def __init__(self, node: "Node", parent: QWidget = None):
+    def __init__(self, node: "Node", parent: Optional[QWidget] = None):
         """
         :param node: reference to :class:`~nodeeditor.node_node.Node`
         :type node: :class:`~nodeeditor.node_node.Node`
@@ -32,6 +33,9 @@ class QDMGraphicsNode(QGraphicsItem):
         self.initSizes()
         self.initAssets()
         self.initUI()
+
+    def set_height(self, new_height: int):
+        self.height = new_height
 
     @property
     def content(self):
@@ -67,6 +71,8 @@ class QDMGraphicsNode(QGraphicsItem):
 
     def initSizes(self):
         """Set up internal attributes like `width`, `height`, etc."""
+        self.padding_left = 100
+        self.padding_right = 100
         self.width = 180
         self.height = 240
         self.edge_roundness = 10.0
@@ -79,6 +85,7 @@ class QDMGraphicsNode(QGraphicsItem):
         """Initialize ``QObjects`` like ``QColor``, ``QPen`` and ``QBrush``"""
         self._title_color = Qt.white
         self._title_font = QApplication.font()
+        self._title_font.setPixelSize(16)
 
         self._color = QColor("#7F000000")
         self._color_selected = QColor("#FFFFA637")
@@ -152,19 +159,21 @@ class QDMGraphicsNode(QGraphicsItem):
         """Overriden event for doubleclick. Resend to `Node::onDoubleClicked`"""
         self.node.onDoubleClicked(event)
 
-    def hoverEnterEvent(self, event: "QGraphicsSceneHoverEvent") -> None:
+    def hoverEnterEvent(self, *_) -> None:
         """Handle hover effect"""
         self.hovered = True
         self.update()
 
-    def hoverLeaveEvent(self, event: "QGraphicsSceneHoverEvent") -> None:
+    def hoverLeaveEvent(self, *_) -> None:
         """Handle hover effect"""
         self.hovered = False
         self.update()
 
     def boundingRect(self) -> QRectF:
         """Defining Qt' bounding rectangle"""
-        return QRectF(0, 0, self.width, self.height).normalized()
+        return QRectF(
+            0, 0, self.width + self.padding_left + self.padding_right, self.height
+        ).normalized()
 
     def initTitle(self):
         """Set up the title Graphics representation: font, color, position, etc."""
@@ -179,9 +188,12 @@ class QDMGraphicsNode(QGraphicsItem):
         """Set up the `grContent` - ``QGraphicsProxyWidget`` to have a container for `Graphics Content`"""
         if self.content is not None:
             self.content.setGeometry(
-                self.edge_padding,
+                self.edge_padding + self.padding_left,
                 self.title_height + self.edge_padding,
-                self.width - 2 * self.edge_padding,
+                self.width
+                - 2 * self.edge_padding
+                + self.padding_left
+                - self.padding_right,
                 self.height - 2 * self.edge_padding - self.title_height,
             )
 
@@ -190,15 +202,18 @@ class QDMGraphicsNode(QGraphicsItem):
         self.grContent.node = self.node
         self.grContent.setParentItem(self)
 
-    def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+    def paint(self, painter, *_):
         """Painting the rounded rectanglar `Node`"""
         # title
+        for socket in self.node.inputs + self.node.outputs:
+            socket.setSocketPosition()
+
         path_title = QPainterPath()
         path_title.setFillRule(Qt.WindingFill)
         path_title.addRoundedRect(
             0,
             0,
-            self.width,
+            self.width + self.padding_left + self.padding_right,
             self.title_height,
             self.edge_roundness,
             self.edge_roundness,
@@ -210,7 +225,7 @@ class QDMGraphicsNode(QGraphicsItem):
             self.edge_roundness,
         )
         path_title.addRect(
-            self.width - self.edge_roundness,
+            self.width - self.edge_roundness + self.padding_left + self.padding_right,
             self.title_height - self.edge_roundness,
             self.edge_roundness,
             self.edge_roundness,
@@ -225,7 +240,7 @@ class QDMGraphicsNode(QGraphicsItem):
         path_content.addRoundedRect(
             0,
             self.title_height,
-            self.width,
+            self.width + self.padding_left + self.padding_right,
             self.height - self.title_height,
             self.edge_roundness,
             self.edge_roundness,
@@ -234,7 +249,7 @@ class QDMGraphicsNode(QGraphicsItem):
             0, self.title_height, self.edge_roundness, self.edge_roundness
         )
         path_content.addRect(
-            self.width - self.edge_roundness,
+            self.width - self.edge_roundness + self.padding_left + self.padding_right,
             self.title_height,
             self.edge_roundness,
             self.edge_roundness,
@@ -248,7 +263,7 @@ class QDMGraphicsNode(QGraphicsItem):
         path_outline.addRoundedRect(
             -1,
             -1,
-            self.width + 2,
+            self.width + 2 + self.padding_left + self.padding_right,
             self.height + 2,
             self.edge_roundness,
             self.edge_roundness,

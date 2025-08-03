@@ -2,9 +2,9 @@
 """
 A module containing Graphics representation of a :class:`~nodeeditor.node_socket.Socket`
 """
-from qtpy.QtWidgets import QGraphicsItem
-from qtpy.QtGui import QColor, QBrush, QPen
-from qtpy.QtCore import Qt, QRectF
+from qtpy.QtWidgets import QGraphicsItem, QApplication
+from qtpy.QtGui import QColor, QBrush, QPen, QFontMetrics
+from qtpy.QtCore import Qt, QRectF, QPoint, QPointF
 
 SOCKET_COLORS = [
     QColor("#FFFF7700"),
@@ -23,9 +23,11 @@ SOCKET_COLORS = [
     QColor("#FF888888"),
 ]
 
+
 class QDMGraphicsSocket(QGraphicsItem):
     """Class representing Graphic `Socket` in ``QGraphicsScene``"""
-    def __init__(self, socket:'Socket'):
+
+    def __init__(self, socket: "Socket"):
         """
         :param socket: reference to :class:`~nodeeditor.node_socket.Socket`
         :type socket: :class:`~nodeeditor.node_socket.Socket`
@@ -46,9 +48,7 @@ class QDMGraphicsSocket(QGraphicsItem):
 
     def getSocketColor(self, key):
         """Returns the ``QColor`` for this ``key``"""
-        if type(key) == int: return SOCKET_COLORS[key]
-        elif type(key) == str: return QColor(key)
-        return Qt.transparent
+        return SOCKET_COLORS[key]
 
     def changeSocketType(self):
         """Change the Socket Type"""
@@ -71,17 +71,34 @@ class QDMGraphicsSocket(QGraphicsItem):
         self._pen_highlight.setWidthF(2.0)
         self._brush = QBrush(self._color_background)
 
-    def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+    def paint(self, painter, *_):
         """Painting a circle"""
         painter.setBrush(self._brush)
         painter.setPen(self._pen if not self.isHighlighted else self._pen_highlight)
-        painter.drawEllipse(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)
+        painter.drawEllipse(
+            -self.radius, -self.radius, 2 * self.radius, 2 * self.radius
+        )
+        painter.setBrush(Qt.NoBrush)
+
+        metrics = QFontMetrics(QApplication.font())
+        elided = metrics.elidedText(self.socket.name, Qt.ElideRight, 100)
+
+        painter.setPen(QColor("white"))
+        if self.socket.is_input:
+            painter.drawText(QPoint(self.radius * 2, int(self.radius / 2)), elided)
+        else:
+            text_width = metrics.horizontalAdvance(elided)
+            x_right = -2 * self.radius - text_width
+            painter.drawText(
+                QPointF(x_right, int(self.radius / 2)),
+                elided,
+            )
 
     def boundingRect(self) -> QRectF:
         """Defining Qt' bounding rectangle"""
         return QRectF(
-            - self.radius - self.outline_width,
-            - self.radius - self.outline_width,
+            -self.radius - self.outline_width,
+            -self.radius - self.outline_width,
             2 * (self.radius + self.outline_width),
             2 * (self.radius + self.outline_width),
         )

@@ -4,15 +4,14 @@ A module containing Graphic representation of :class:`~nodeeditor.node_scene.Sce
 """
 import math
 
-from qtpy.QtCore import QLine, QRect, Qt, Signal
-from qtpy.QtGui import QColor, QFont, QPainter, QPen
+from qtpy.QtCore import QLine, QRect, Qt, Signal  # type: ignore
+from qtpy.QtGui import QColor, QPainter, QPen
 from qtpy.QtWidgets import QApplication, QGraphicsScene, QWidget
 
-from nodeeditor.node_graphics_view import DEBUG_STATE, STATE_STRING
 from nodeeditor.utils import dumpException
 
 
-class QDMGraphicsScene(QGraphicsScene):
+class QDMGraphicsScene(QGraphicsScene):  # type: ignore
     """Class representing Graphic of :class:`~nodeeditor.node_scene.Scene`"""
 
     #: pyqtSignal emitted when some item is selected in the `Scene`
@@ -112,23 +111,3 @@ class QDMGraphicsScene(QGraphicsScene):
             painter.drawLines(*lines_dark)  # supporting PyQt5
         except TypeError:
             painter.drawLines(lines_dark)  # supporting PySide2
-
-        if DEBUG_STATE:
-            try:
-                painter.setFont(self._font_state)
-                painter.setPen(self._pen_state)
-                painter.setRenderHint(QPainter.TextAntialiasing)
-                offset = 14
-                rect_state = QRect(
-                    rect.x() + offset,
-                    rect.y() + offset,
-                    rect.width() - 2 * offset,
-                    rect.height() - 2 * offset,
-                )
-                painter.drawText(
-                    rect_state,
-                    Qt.AlignRight | Qt.AlignTop,
-                    STATE_STRING[self.views()[0].mode].upper(),
-                )
-            except:
-                dumpException()

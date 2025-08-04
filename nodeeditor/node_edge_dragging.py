@@ -64,7 +64,6 @@ class EdgeDragging:
 
             # check if edge would be valid
             if not self.drag_edge.validateEdge(self.drag_start_socket, item.socket):
-                print("NOT VALID EDGE")
                 return False
 
             # regular processing of drag edge
